@@ -181,7 +181,7 @@ func TestMemoryMetrics(t *testing.T) {
 	assert.GreaterOrEqual(t, total, uint64(0), "total.bytes value cannot be less than 0")
 	assert.LessOrEqual(t, total, uint64(7e10), "total.bytes value cannot be more than 7e10")
 
-	assert.Equal(t, free + used, total, "total.bytes must equal free + used")
+	assert.Equal(t, free+used, total, "total.bytes must equal free + used")
 
 	err = Shutdown()
 	assert.Nil(t, err, err)
@@ -291,6 +291,263 @@ func TestTemperature(t *testing.T) {
 	// onboard check
 	assert.GreaterOrEqual(t, onboard, uint(30), "onboard temperature value cannot be less than 0")
 	assert.LessOrEqual(t, onboard, uint(80), "onboard temperature value cannot be more than 80")
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
+func TestECCVolatileErrors(t *testing.T) {
+	err := Initialize()
+	assert.Nil(t, err, err)
+
+	cnt, err := DeviceCount()
+
+	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
+	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
+
+	dev, err := DeviceHandleByIndex(0)
+	assert.Nil(t, err, "Should be able to get device handle")
+
+	eccErr, err := dev.ECCVolatileErrors()
+	assert.Nil(t, err, "Should be able to get ecc volatile errors")
+	assert.Equal(t, uint64(0), eccErr, "ECCVolatileErrors value should be 0")
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
+func TestECCAggregateErrors(t *testing.T) {
+	err := Initialize()
+	assert.Nil(t, err, err)
+
+	cnt, err := DeviceCount()
+
+	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
+	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
+
+	dev, err := DeviceHandleByIndex(0)
+	assert.Nil(t, err, "Should be able to get device handle")
+
+	eccErr, err := dev.ECCAggregateErrors()
+	assert.Nil(t, err, "Should be able to get ecc aggregate errors")
+	assert.Equal(t, uint64(0), eccErr, "ECCVolatileErrors value should be 0")
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
+func TestHLRevision(t *testing.T) {
+	err := Initialize()
+	assert.Nil(t, err, err)
+
+	cnt, err := DeviceCount()
+
+	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
+	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
+
+	dev, err := DeviceHandleByIndex(0)
+	assert.Nil(t, err, "Should be able to get device handle")
+
+	rev, err := dev.HLRevision()
+	assert.Nil(t, err, "Should be able to get HL revision")
+	assert.Equal(t, int(0), rev, "HLRevision should be 0")
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
+func TestPCBVersion(t *testing.T) {
+	err := Initialize()
+	assert.Nil(t, err, err)
+
+	cnt, err := DeviceCount()
+
+	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
+	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
+
+	dev, err := DeviceHandleByIndex(0)
+	assert.Nil(t, err, "Should be able to get device handle")
+
+	pcbVer, err := dev.PCBVersion()
+	assert.Nil(t, err, "Should be able to get PCB Version")
+	assert.Greater(t, len(pcbVer), 2)
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
+func TestPCBAssemblyVersion(t *testing.T) {
+	err := Initialize()
+	assert.Nil(t, err, err)
+
+	cnt, err := DeviceCount()
+
+	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
+	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
+
+	dev, err := DeviceHandleByIndex(0)
+	assert.Nil(t, err, "Should be able to get device handle")
+
+	pcbVer, err := dev.PCBAssemblyVersion()
+	assert.Nil(t, err, "Should be able to get PCB Assembly Version")
+	assert.Greater(t, len(pcbVer), 2)
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
+func TestSerialNumber(t *testing.T) {
+	err := Initialize()
+	assert.Nil(t, err, err)
+
+	cnt, err := DeviceCount()
+
+	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
+	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
+
+	dev, err := DeviceHandleByIndex(0)
+	assert.Nil(t, err, "Should be able to get device handle")
+
+	serial, err := dev.SerialNumber()
+	assert.Nil(t, err, "Should be able to get serial number")
+	assert.Greater(t, len(serial), 8)
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
+func TestBoardID(t *testing.T) {
+	err := Initialize()
+	assert.Nil(t, err, err)
+
+	cnt, err := DeviceCount()
+
+	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
+	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
+
+	dev, err := DeviceHandleByIndex(0)
+	assert.Nil(t, err, "Should be able to get device handle")
+
+	_, err := dev.BoardID()
+	assert.Nil(t, err, "Should be able to get board id")
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
+func TestPCIeTX(t *testing.T) {
+	err := Initialize()
+	assert.Nil(t, err, err)
+
+	cnt, err := DeviceCount()
+
+	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
+	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
+
+	dev, err := DeviceHandleByIndex(0)
+	assert.Nil(t, err, "Should be able to get device handle")
+
+	_, err := dev.PCIeTX()
+	assert.Nil(t, err, "Should be able to get pcie transmit id")
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
+func TestPCIeRX(t *testing.T) {
+	err := Initialize()
+	assert.Nil(t, err, err)
+
+	cnt, err := DeviceCount()
+
+	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
+	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
+
+	dev, err := DeviceHandleByIndex(0)
+	assert.Nil(t, err, "Should be able to get device handle")
+
+	_, err := dev.PCIeRX()
+	assert.Nil(t, err, "Should be able to get pcie receive id")
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
+func TestPCIReplayCounter(t *testing.T) {
+	err := Initialize()
+	assert.Nil(t, err, err)
+
+	cnt, err := DeviceCount()
+
+	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
+	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
+
+	dev, err := DeviceHandleByIndex(0)
+	assert.Nil(t, err, "Should be able to get device handle")
+
+	replayCnt, err := dev.PCIReplayCounter()
+	assert.Nil(t, err, "Should be able to get pcie replay count")
+	assert.Equal(t, uint(0), replayCnt, "PCIReplayCounter should be 0")
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
+func TestPCIeLinkGeneration(t *testing.T) {
+	err := Initialize()
+	assert.Nil(t, err, err)
+
+	cnt, err := DeviceCount()
+
+	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
+	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
+
+	dev, err := DeviceHandleByIndex(0)
+	assert.Nil(t, err, "Should be able to get device handle")
+
+	gen, err := dev.PCIeLinkGeneration()
+	assert.Nil(t, err, "Should be able to get pcie link generation")
+	assert.Equal(t, int(4), gen, "PCIeLinkGeneration should be 4") // maybe 5
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
+func TestPCIeLinkWidth(t *testing.T) {
+	err := Initialize()
+	assert.Nil(t, err, err)
+
+	cnt, err := DeviceCount()
+
+	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
+	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
+
+	dev, err := DeviceHandleByIndex(0)
+	assert.Nil(t, err, "Should be able to get device handle")
+
+	width, err := dev.PCIeLinkWidth()
+	assert.Nil(t, err, "Should be able to get pcie link width")
+	assert.Equal(t, int(4), width, "PCIeLinkWidth should be 0")
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
+func TestEnergyConsumptionCounter(t *testing.T) {
+	err := Initialize()
+	assert.Nil(t, err, err)
+
+	cnt, err := DeviceCount()
+
+	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
+	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
+
+	dev, err := DeviceHandleByIndex(0)
+	assert.Nil(t, err, "Should be able to get device handle")
+
+	energy, err := dev.EnergyConsumptionCounter()
+	assert.Nil(t, err, "Should be able to get pcie link width")
+	assert.Greater(t, energy, uint64(0), "EnergyConsumptionCounter should be > 0")
 
 	err = Shutdown()
 	assert.Nil(t, err, err)

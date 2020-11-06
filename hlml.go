@@ -270,6 +270,118 @@ func (d Device) Temperature() (uint, uint, error) {
 	return uint(onBoard), uint(onChip), errorString(rc)
 }
 
+// ECCVolatileErrors returns the running out of ECC errors in volatile memory
+func (d Device) ECCVolatileErrors() (uint64, error) {
+	var eccErr C.ulonglong
+
+	rc := C.hlml_device_get_total_ecc_errors(d.dev, C.HLML_MEMORY_ERROR_TYPE_UNCORRECTED, C.HLML_VOLATILE_ECC, &eccErr)
+	return uint64(eccErr), errorString(rc)
+}
+
+// ECCAggregateErrors returns the running out of ECC errors in aggregate memory
+func (d Device) ECCAggregateErrors() (uint64, error) {
+	var eccErr C.ulonglong
+
+	rc := C.hlml_device_get_total_ecc_errors(d.dev, C.HLML_MEMORY_ERROR_TYPE_UNCORRECTED, C.HLML_AGGREGATE_ECC, &eccErr)
+	return uint64(eccErr), errorString(rc)
+}
+
+// HLRevision returns the revision of the HL library
+func (d Device) HLRevision() (int, error) {
+	var rev C.int
+
+	rc := C.hlml_device_get_hl_revision(d.dev, &rev)
+	return int(rev), errorString(rc)
+}
+
+// PCBVersion returns the PCB version
+func (d Device) PCBVersion() (string, error) {
+	var pcb C.hlml_pcb_info_t
+
+	rc := C.hlml_device_get_pcb_info(d.dev, &pcb)
+	return C.GoString(&pcb.pcb_ver[0]), errorString(rc)
+}
+
+// PCBAssemblyVersion returns the PCB Assembly info
+func (d Device) PCBAssemblyVersion() (string, error) {
+	var pcb C.hlml_pcb_info_t
+
+	rc := C.hlml_device_get_pcb_info(d.dev, &pcb)
+	return C.GoString(&pcb.pcb_assembly_ver[0]), errorString(rc)
+}
+
+// SerialNumber returns the device serial number
+func (d Device) SerialNumber() (string, error) {
+	var serial [szUUID]C.char
+
+	rc := C.hlml_device_get_serial(d.dev, &serial[0], szUUID)
+	return C.GoString(&serial[0]), errorString(rc)
+}
+
+// BoardID returns an ID for the PCB board
+func (d Device) BoardID() (uint, error) {
+	var id C.uint
+
+	rc := C.hlml_device_get_board_id(d.dev, &id)
+	return uint(id), errorString(rc)
+}
+
+// PCIeTX returns PCIe transmit throughput
+func (d Device) PCIeTX() (uint, error) {
+	var val C.uint
+
+	rc := C.hlml_device_get_pcie_throughput(d.dev, C.HLML_PCIE_UTIL_TX_BYTES, &val)
+	return uint(val), errorString(rc)
+}
+
+// PCIeRX returns PCIe receive throughput
+func (d Device) PCIeRX() (uint, error) {
+	var val C.uint
+
+	rc := C.hlml_device_get_pcie_throughput(d.dev, C.HLML_PCIE_UTIL_RX_BYTES, &val)
+	return uint(val), errorString(rc)
+}
+
+// PCIReplayCounter returns PCIe replay count
+func (d Device) PCIReplayCounter() (uint, error) {
+	var val C.uint
+
+	rc := C.hlml_device_get_pcie_replay_counter(d.dev, &val)
+	return uint(val), errorString(rc)
+}
+
+// PCIeLinkGeneration returns PCIe replay count
+func (d Device) PCIeLinkGeneration() (uint, error) {
+	var gen C.uint
+
+	rc := C.hlml_device_get_curr_pcie_link_generation(d.dev, &gen)
+	return uint(gen), errorString(rc)
+}
+
+// PCIeLinkWidth returns PCIe replay count
+func (d Device) PCIeLinkWidth() (uint, error) {
+	var width C.uint
+
+	rc := C.hlml_device_get_curr_pcie_link_width(d.dev, &width)
+	return uint(width), errorString(rc)
+}
+
+// ClockThrottleReasons returns current clock throttle reasons
+func (d Device) ClockThrottleReasons() (uint64, error) {
+	var reasons C.ulonglong
+
+	rc := C.hlml_device_get_current_clocks_throttle_reasons(d.dev, &reasons)
+	return uint64(reasons), errorString(rc)
+}
+
+// EnergyConsumptionCounter returns current clock throttle reasons
+func (d Device) EnergyConsumptionCounter() (uint64, error) {
+	var energy C.ulonglong
+
+	rc := C.hlml_device_get_total_energy_consumption(d.dev, &energy)
+	return uint64(energy), errorString(rc)
+}
+
 // FWVersion returns the firmware version for a given device
 func FWVersion(idx uint) (string, string, error) {
 	kernel, err := ioutil.ReadFile(HLDriverPath + "/hl" + fmt.Sprint(idx) + "/armcp_kernel_ver")
