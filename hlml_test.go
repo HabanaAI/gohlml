@@ -289,7 +289,7 @@ func TestTemperature(t *testing.T) {
 	assert.LessOrEqual(t, onchip, uint(80), "onchip temperature value cannot be more than 80")
 
 	// onboard check
-	assert.GreaterOrEqual(t, onboard, uint(30), "onboard temperature value cannot be less than 0")
+	assert.GreaterOrEqual(t, onboard, uint(25), "onboard temperature value cannot be less than 0")
 	assert.LessOrEqual(t, onboard, uint(80), "onboard temperature value cannot be more than 80")
 
 	err = Shutdown()
@@ -350,7 +350,7 @@ func TestHLRevision(t *testing.T) {
 
 	rev, err := dev.HLRevision()
 	assert.Nil(t, err, "Should be able to get HL revision")
-	assert.Equal(t, int(0), rev, "HLRevision should be 0")
+	assert.Equal(t, rev, int(3), "HLRevision should be 3")
 
 	err = Shutdown()
 	assert.Nil(t, err, err)
@@ -428,7 +428,7 @@ func TestBoardID(t *testing.T) {
 	dev, err := DeviceHandleByIndex(0)
 	assert.Nil(t, err, "Should be able to get device handle")
 
-	_, err := dev.BoardID()
+	_, err = dev.BoardID()
 	assert.Nil(t, err, "Should be able to get board id")
 
 	err = Shutdown()
@@ -447,7 +447,7 @@ func TestPCIeTX(t *testing.T) {
 	dev, err := DeviceHandleByIndex(0)
 	assert.Nil(t, err, "Should be able to get device handle")
 
-	_, err := dev.PCIeTX()
+	_, err = dev.PCIeTX()
 	assert.Nil(t, err, "Should be able to get pcie transmit id")
 
 	err = Shutdown()
@@ -466,7 +466,7 @@ func TestPCIeRX(t *testing.T) {
 	dev, err := DeviceHandleByIndex(0)
 	assert.Nil(t, err, "Should be able to get device handle")
 
-	_, err := dev.PCIeRX()
+	_, err = dev.PCIeRX()
 	assert.Nil(t, err, "Should be able to get pcie receive id")
 
 	err = Shutdown()
@@ -527,7 +527,7 @@ func TestPCIeLinkWidth(t *testing.T) {
 
 	width, err := dev.PCIeLinkWidth()
 	assert.Nil(t, err, "Should be able to get pcie link width")
-	assert.Equal(t, int(4), width, "PCIeLinkWidth should be 0")
+	assert.Equal(t, int(16), width, "PCIeLinkWidth should be 16")
 
 	err = Shutdown()
 	assert.Nil(t, err, err)
