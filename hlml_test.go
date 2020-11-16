@@ -2,11 +2,13 @@ package gohlml
 
 import (
 	"testing"
-
+	"log"
+	"time"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestInitialize(t *testing.T) {
+	defer duration(track("TestInitialize()"))
 	cnt, err := DeviceCount()
 
 	assert.NotNil(t, err, "Error should be raised when HLML isn't enabled")
@@ -24,6 +26,7 @@ func TestInitialize(t *testing.T) {
 }
 
 func TestRedundantInitialize(t *testing.T) {
+	defer duration(track("TestRedundantInitialize()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -40,6 +43,7 @@ func TestRedundantInitialize(t *testing.T) {
 }
 
 func TestInitWithLogs(t *testing.T) {
+	defer duration(track("TestInitWithLogs()"))
 	err := InitWithLogs()
 	assert.Nil(t, err, err)
 
@@ -53,6 +57,7 @@ func TestInitWithLogs(t *testing.T) {
 }
 
 func TestDeviceHandleByIndex(t *testing.T) {
+	defer duration(track("TestDeviceHandleByIndex()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -73,6 +78,7 @@ func TestDeviceHandleByIndex(t *testing.T) {
 }
 
 func TestGetDeviceByUUID(t *testing.T) {
+	defer duration(track("TestGetDeviceByUUID()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -103,6 +109,7 @@ func TestGetDeviceByUUID(t *testing.T) {
 }
 
 func TestGetDeviceName(t *testing.T) {
+	defer duration(track("TestGetDevicName()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -123,6 +130,7 @@ func TestGetDeviceName(t *testing.T) {
 }
 
 func TestPCIFunctions(t *testing.T) {
+	defer duration(track("TestPCIFunctions()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -158,6 +166,7 @@ func TestPCIFunctions(t *testing.T) {
 }
 
 func TestMemoryMetrics(t *testing.T) {
+	defer duration(track("TestMemoryMetrics()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -188,6 +197,7 @@ func TestMemoryMetrics(t *testing.T) {
 }
 
 func TestUtilizationInfo(t *testing.T) {
+	defer duration(track("TestUtilizationInfo()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -207,6 +217,7 @@ func TestUtilizationInfo(t *testing.T) {
 }
 
 func TestClockMetrics(t *testing.T) {
+	defer duration(track("TestClockMetrics()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -251,6 +262,7 @@ func TestClockMetrics(t *testing.T) {
 }
 
 func TestPowerUsage(t *testing.T) {
+	defer duration(track("TestPowerUsage()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -272,6 +284,7 @@ func TestPowerUsage(t *testing.T) {
 }
 
 func TestTemperature(t *testing.T) {
+	defer duration(track("TestTemperature()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -297,6 +310,7 @@ func TestTemperature(t *testing.T) {
 }
 
 func TestECCVolatileErrors(t *testing.T) {
+	defer duration(track("TestECCVolatileErrors()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -317,6 +331,7 @@ func TestECCVolatileErrors(t *testing.T) {
 }
 
 func TestECCAggregateErrors(t *testing.T) {
+	defer duration(track("TestECCAggregateErrors()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -337,6 +352,7 @@ func TestECCAggregateErrors(t *testing.T) {
 }
 
 func TestHLRevision(t *testing.T) {
+	defer duration(track("TestHLRevision()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -357,6 +373,7 @@ func TestHLRevision(t *testing.T) {
 }
 
 func TestPCBVersion(t *testing.T) {
+	defer duration(track("TestPCBVersion()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -377,6 +394,7 @@ func TestPCBVersion(t *testing.T) {
 }
 
 func TestPCBAssemblyVersion(t *testing.T) {
+	defer duration(track("TestPCBAssemblyVersion()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -397,6 +415,7 @@ func TestPCBAssemblyVersion(t *testing.T) {
 }
 
 func TestSerialNumber(t *testing.T) {
+	defer duration(track("TestSerialNumber()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -417,6 +436,7 @@ func TestSerialNumber(t *testing.T) {
 }
 
 func TestBoardID(t *testing.T) {
+	defer duration(track("TestBoardID()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -436,6 +456,7 @@ func TestBoardID(t *testing.T) {
 }
 
 func TestPCIeTX(t *testing.T) {
+	defer duration(track("TestPCIeTX()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -455,6 +476,7 @@ func TestPCIeTX(t *testing.T) {
 }
 
 func TestPCIeRX(t *testing.T) {
+	defer duration(track("TestPCIeRX()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -474,6 +496,7 @@ func TestPCIeRX(t *testing.T) {
 }
 
 func TestPCIReplayCounter(t *testing.T) {
+	defer duration(track("TestPCIReplayCounter()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -493,7 +516,9 @@ func TestPCIReplayCounter(t *testing.T) {
 	assert.Nil(t, err, err)
 }
 
+/*
 func TestPCIeLinkGeneration(t *testing.T) {
+	defer duration(track("TestPCIeLinkGeneration()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -512,8 +537,10 @@ func TestPCIeLinkGeneration(t *testing.T) {
 	err = Shutdown()
 	assert.Nil(t, err, err)
 }
-
+*/
+/*
 func TestPCIeLinkWidth(t *testing.T) {
+	defer duration(track("TestPCIeLinkWidth()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -532,8 +559,9 @@ func TestPCIeLinkWidth(t *testing.T) {
 	err = Shutdown()
 	assert.Nil(t, err, err)
 }
-
+*/
 func TestEnergyConsumptionCounter(t *testing.T) {
+	defer duration(track("TestEnergyConsumptionCounter()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -554,6 +582,7 @@ func TestEnergyConsumptionCounter(t *testing.T) {
 }
 
 func TestStaticInfo(t *testing.T) {
+	defer duration(track("TestStaticInfo()"))
 	err := Initialize()
 	assert.Nil(t, err, err)
 
@@ -573,4 +602,13 @@ func TestStaticInfo(t *testing.T) {
 
 	err = Shutdown()
 	assert.Nil(t, err, err)
+}
+
+
+func track(msg string) (string, time.Time) {
+	return msg, time.Now()
+}
+
+func duration(msg string, start time.Time) {
+	log.Printf("%v: %v\n", msg, time.Since(start))
 }
