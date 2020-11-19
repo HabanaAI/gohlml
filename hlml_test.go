@@ -15,8 +15,7 @@ func TestInitialize(t *testing.T) {
 
 	start := time.Now()
 	err = Initialize()
-	duration := time.Since(start)
-	printDuration("TestInitialize()", duration)
+	printDuration("TestInitialize()", time.Since(start))
 	assert.Nil(t, err, err)
 
 	cnt, err = DeviceCount()
@@ -48,8 +47,7 @@ func TestInitWithLogs(t *testing.T) {
 
 	start := time.Now()
 	err := InitWithLogs()
-	duration := time.Since(start)
-	printDuration("TestInitWithLogs()", duration)
+	printDuration("TestInitWithLogs()", time.Since(start))
 	assert.Nil(t, err, err)
 
 	cnt, err := DeviceCount()
@@ -72,14 +70,12 @@ func TestDeviceHandleByIndex(t *testing.T) {
 
 	start := time.Now()
 	dev, err := DeviceHandleByIndex(0)
-	duration := time.Since(start)
-	printDuration("TestDeviceHandleByIndex()", duration)
+	printDuration("TestDeviceHandleByIndex()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get device handle")
 
 	start = time.Now()
 	idx, err := dev.MinorNumber()
-	duration = time.Since(start)
-	printDuration("MinorNumber()", duration)
+	printDuration("MinorNumber()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get device index")
 	assert.Equal(t, uint(0), idx, "Index of device 0 should be 0")
 
@@ -101,22 +97,19 @@ func TestGetDeviceByUUID(t *testing.T) {
 
 	start := time.Now()
 	uuid, err := dev.UUID()
-	duration := time.Since(start)
-	printDuration("UUID()", duration)
+	printDuration("UUID()", time.Since(start))
 
 	assert.Nil(t, err, "Should be able to get device UUID")
 
 	start = time.Now()
 	dev2, err := DeviceHandleByUUID(uuid)
-	duration = time.Since(start)
-	printDuration("DeviceHandleByUUID()", duration)
+	printDuration("DeviceHandleByUUID()", time.Since(start))
 
 	assert.Nil(t, err, "Should be able to get device UUID")
 
 	start = time.Now()
 	devMinor, err := dev.MinorNumber()
-	duration = time.Since(start)
-	printDuration("MinorNumber()", duration)
+	printDuration("MinorNumber()", time.Since(start))
 
 	assert.Nil(t, err, "Should be able to get minor number ")
 
@@ -143,8 +136,7 @@ func TestGetDeviceName(t *testing.T) {
 
 	start := time.Now()
 	name, err := dev.Name()
-	duration := time.Since(start)
-	printDuration("Name()", duration)
+	printDuration("Name()", time.Since(start))
 	
 	assert.Nil(t, err, "Should be able to get device UUID")
 	assert.Greater(t, len(name), 0, "Name should have a length")
@@ -167,39 +159,33 @@ func TestPCIFunctions(t *testing.T) {
 
 	start := time.Now()
 	_, err = dev.PCIDomain()
-	duration := time.Since(start)
-	printDuration("PCIDomain()", duration)
+	printDuration("PCIDomain()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get PCI domain")
 
 	start = time.Now()
 	_, err = dev.PCIBus()
-	duration = time.Since(start)
-	printDuration("PCIBus()", duration)
+	printDuration("PCIBus()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get PCI bus")
 
     start = time.Now()
 	busID, err := dev.PCIBusID()
-	duration = time.Since(start)
-	printDuration("PCIBusID()", duration)
+	printDuration("PCIBusID()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get PCI busID")
 	assert.Greater(t, len(busID), 0, "busID should have a length")
 
     start = time.Now()
 	_, err = dev.PCIID()
-	duration = time.Since(start)
-	printDuration("PCIID()", duration)
+	printDuration("PCIID()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get PCIID")
 
     start = time.Now()
 	_, err = dev.PCILinkSpeed()
-	duration = time.Since(start)
-	printDuration("PCILinkSpeed()", duration)
+	printDuration("PCILinkSpeed()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get PCILinkSpeed")
 
     start = time.Now()
 	_, err = dev.PCILinkWidth()
-	duration = time.Since(start)
-	printDuration("PCILinkWidth()", duration)
+	printDuration("PCILinkWidth()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get PCILinkSpeed")
 
 	err = Shutdown()
@@ -220,8 +206,7 @@ func TestMemoryMetrics(t *testing.T) {
 
 	start := time.Now()
 	total, used, free, err := dev.MemoryInfo()
-	duration := time.Since(start)
-	printDuration("MemoryInfo()", duration)
+	printDuration("MemoryInfo()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get MemoryInfo")
 
 	assert.GreaterOrEqual(t, free, uint64(0), "free.bytes value cannot be less than 0")
@@ -253,8 +238,7 @@ func TestUtilizationInfo(t *testing.T) {
 
 	start := time.Now()
 	_, err = dev.UtilizationInfo()
-	duration := time.Since(start)
-	printDuration("UtilizationInfo()", duration)
+	printDuration("UtilizationInfo()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get UtilizationInfo")
 
 	err = Shutdown()
@@ -275,23 +259,19 @@ func TestClockMetrics(t *testing.T) {
 
 	start := time.Now()
 	freqSoc, socErr := dev.SOCClockInfo()
-	duration := time.Since(start)
-	printDuration("SOCClockInfo()", duration)
+	printDuration("SOCClockInfo()", time.Since(start))
 
 	start = time.Now()
 	freqIC, icErr := dev.ICClockInfo()
-	duration = time.Since(start)
-	printDuration("ICClockInfo()", duration)
+	printDuration("ICClockInfo()", time.Since(start))
 
 	start = time.Now()
 	freqMME, mmeErr := dev.MMEClockInfo()
-	duration = time.Since(start)
-	printDuration("MMEClockInfo", duration)
+	printDuration("MMEClockInfo", time.Since(start))
 
 	start = time.Now()
 	freqTPC, tpcErr := dev.TPCClockInfo()
-	duration = time.Since(start)
-	printDuration("TPCClockInfo()", duration)
+	printDuration("TPCClockInfo()", time.Since(start))
 
 
 	if socErr != nil && icErr != nil && mmeErr != nil && tpcErr != nil {
@@ -336,8 +316,7 @@ func TestPowerUsage(t *testing.T) {
 
 	start := time.Now()
 	power, err := dev.PowerUsage()
-	duration := time.Since(start)
-	printDuration("PowerUsage()", duration)
+	printDuration("PowerUsage()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get power")
 	assert.GreaterOrEqual(t, power, uint(5000), "power temperature value cannot be less than 0")
 	assert.LessOrEqual(t, power, uint(400000), "power temperature value cannot be more than 80")
@@ -360,8 +339,7 @@ func TestTemperature(t *testing.T) {
 
 	start := time.Now()
 	onchip, onboard, err := dev.Temperature()
-	duration := time.Since(start)
-	printDuration("Temperature()", duration)
+	printDuration("Temperature()", time.Since(start))
 
 	assert.Nil(t, err, "Should be able to get temperature")
 	assert.GreaterOrEqual(t, onchip, uint(30), "onchip temperature value cannot be less than 0")
@@ -389,8 +367,7 @@ func TestECCVolatileErrors(t *testing.T) {
 
 	start := time.Now()
 	eccErr, err := dev.ECCVolatileErrors()
-	duration := time.Since(start)
-	printDuration("ECCVolatileErrors()", duration)
+	printDuration("ECCVolatileErrors()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get ecc volatile errors")
 	assert.Equal(t, uint64(0), eccErr, "ECCVolatileErrors value should be 0")
 
@@ -412,8 +389,7 @@ func TestECCAggregateErrors(t *testing.T) {
 
 	start := time.Now()
 	eccErr, err := dev.ECCAggregateErrors()
-	duration := time.Since(start)
-	printDuration("ECCAggregateErrors()", duration)
+	printDuration("ECCAggregateErrors()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get ecc aggregate errors")
 	assert.Equal(t, uint64(0), eccErr, "ECCVolatileErrors value should be 0")
 
@@ -435,8 +411,7 @@ func TestHLRevision(t *testing.T) {
 
 	start := time.Now()
 	rev, err := dev.HLRevision()
-	duration := time.Since(start)
-	printDuration("HLRevision()", duration)
+	printDuration("HLRevision()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get HL revision")
 	assert.Equal(t, rev, int(3), "HLRevision should be 3")
 
@@ -458,8 +433,7 @@ func TestPCBVersion(t *testing.T) {
 
 	start := time.Now()
 	pcbVer, err := dev.PCBVersion()
-	duration := time.Since(start)
-	printDuration("PCBVersion", duration)
+	printDuration("PCBVersion", time.Since(start))
 	assert.Nil(t, err, "Should be able to get PCB Version")
 	assert.Greater(t, len(pcbVer), 2)
 
@@ -481,8 +455,7 @@ func TestPCBAssemblyVersion(t *testing.T) {
 
 	start := time.Now()
 	pcbVer, err := dev.PCBAssemblyVersion()
-	duration := time.Since(start)
-	printDuration("PCBAssemblyVersion()", duration)
+	printDuration("PCBAssemblyVersion()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get PCB Assembly Version")
 	assert.Greater(t, len(pcbVer), 2)
 
@@ -504,8 +477,7 @@ func TestSerialNumber(t *testing.T) {
 
 	start := time.Now()
 	serial, err := dev.SerialNumber()
-	duration := time.Since(start)
-	printDuration("SerialNumber()", duration)
+	printDuration("SerialNumber()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get serial number")
 	assert.Greater(t, len(serial), 8)
 
@@ -527,8 +499,7 @@ func TestBoardID(t *testing.T) {
 
 	start := time.Now()
 	_, err = dev.BoardID()
-	duration := time.Since(start)
-	printDuration("BoardID()", duration)
+	printDuration("BoardID()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get board id")
 
 	err = Shutdown()
@@ -549,8 +520,7 @@ func TestPCIeTX(t *testing.T) {
 
 	start := time.Now()
 	_, err = dev.PCIeTX()
-	duration := time.Since(start)
-	printDuration("PCIeTX()", duration)
+	printDuration("PCIeTX()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get pcie transmit id")
 
 	err = Shutdown()
@@ -571,8 +541,7 @@ func TestPCIeRX(t *testing.T) {
 
 	start := time.Now()
 	_, err = dev.PCIeRX()
-	duration := time.Since(start)
-	printDuration("PCIeRX()", duration)
+	printDuration("PCIeRX()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get pcie receive id")
 
 	err = Shutdown()
@@ -593,8 +562,7 @@ func TestPCIReplayCounter(t *testing.T) {
 
 	start := time.Now()
 	replayCnt, err := dev.PCIReplayCounter()
-	duration := time.Since(start)
-	printDuration("PCIReplayCounter()", duration)
+	printDuration("PCIReplayCounter()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get pcie replay count")
 	assert.Equal(t, uint(0), replayCnt, "PCIReplayCounter should be 0")
 
@@ -618,8 +586,7 @@ func TestPCIeLinkGeneration(t *testing.T) {
 
 	start := time.Now()
 	gen, err := dev.PCIeLinkGeneration()
-	duration := time.Since(start)
-	printDuration("PCIeLinkGeneration()", duration)
+	printDuration("PCIeLinkGeneration()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get pcie link generation")
 	assert.Equal(t, int(4), gen, "PCIeLinkGeneration should be 4") // maybe 5
 
@@ -642,8 +609,7 @@ func TestPCIeLinkWidth(t *testing.T) {
 
 	start := time.Now()
 	width, err := dev.PCIeLinkWidth()
-	duration := time.Since(start)
-	printDuration("PCIeLinkWidth()", duration)
+	printDuration("PCIeLinkWidth()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get pcie link width")
 	assert.Equal(t, int(16), width, "PCIeLinkWidth should be 16")
 
@@ -665,8 +631,7 @@ func TestEnergyConsumptionCounter(t *testing.T) {
 
 	start := time.Now()
 	energy, err := dev.EnergyConsumptionCounter()
-	duration := time.Since(start)
-	printDuration("EnergyConsumptionCounter()", duration)
+	printDuration("EnergyConsumptionCounter()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get pcie link width")
 	assert.Greater(t, energy, uint64(0), "EnergyConsumptionCounter should be > 0")
 
@@ -685,16 +650,14 @@ func TestStaticInfo(t *testing.T) {
 
 	start := time.Now()
 	kernel, uboot, err := FWVersion(0)
-	duration := time.Since(start)
-	printDuration("FWVersion()", duration)
+	printDuration("FWVersion()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get FWVersion")
 	assert.Greater(t, len(kernel), 10, "kernel version too short")
 	assert.Greater(t, len(uboot), 5, "uboot version too short")
 
 	start = time.Now()
 	ver, err := SystemDriverVersion()
-	duration = time.Since(start)
-	printDuration( "SystemDriverVersion()", duration)
+	printDuration( "SystemDriverVersion()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get SystemDriverVersion")
 	assert.Greater(t, len(ver), 7, "driver version too short")
 
