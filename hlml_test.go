@@ -146,7 +146,6 @@ func TestGetDeviceBySerial(t *testing.T) {
 	err = Shutdown()
 	assert.Nil(t, err, err)
 }
-}
 
 func TestGetDeviceName(t *testing.T) {
 	err := Initialize()
