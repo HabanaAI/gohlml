@@ -46,7 +46,7 @@ type EventSet struct{ set C.hlml_event_set_t }
 
 // Event contains uuid and event type
 type Event struct {
-	UUID  string
+	Serial  string
 	Etype uint64
 }
 
@@ -453,11 +453,11 @@ func WaitForEvent(es EventSet, timeout uint) (Event, error) {
 	var data C.hlml_event_data_t
 
 	r := C.hlml_event_set_wait(es.set, &data, C.uint(timeout))
-	uuid, _ := Device{data.device}.UUID()
+	serial, _ := Device{data.device}.SerialNumber()
 
 	return Event{
-			UUID:  uuid,
-			Etype: uint64(data.event_type),
+			Serial: serial,
+			Etype: 	uint64(data.event_type),
 		},
 		errorString(r)
 }
