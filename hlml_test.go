@@ -122,6 +122,32 @@ func TestGetDeviceByUUID(t *testing.T) {
 	assert.Nil(t, err, err)
 }
 
+func TestGetDeviceBySerial(t *testing.T) {
+	err := Initialize()
+	assert.Nil(t, err, err)
+
+	cnt, err := DeviceCount()
+	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
+	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
+
+	dev, err := DeviceHandleByIndex(0)
+	assert.Nil(t, err, "Should be able to get device handle")
+
+	serial, err := dev.SerialNumber()
+	assert.Nil(t, err, "Should be able to get device serial")
+
+	dev2, err := DeviceHandleBySerial(serial)
+	assert.Nil(t, err, "Should be able to get device by serial")
+
+	dev2Serial, err := dev2.SerialNumber()
+	assert.Nil(t, err, "Should be able to get device serial")
+	assert.Equal(t, serial, dev2Serial, "The serial numbers should match")
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+}
+
 func TestGetDeviceName(t *testing.T) {
 	err := Initialize()
 	assert.Nil(t, err, err)

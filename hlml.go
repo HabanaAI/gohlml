@@ -22,6 +22,7 @@ package gohlml
 // #include <stdlib.h>
 import "C"
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"unsafe"
@@ -128,6 +129,21 @@ func DeviceHandleByUUID(uuid string) (Device, error) {
 
 	rc := C.hlml_device_get_handle_by_UUID(cstr, &dev)
 	return Device{dev}, errorString(rc)
+}
+
+// DeviceHandleBySerial gets a handle to a particular device by serial number
+func DeviceHandleBySerial(serial string) (*Device, error) {
+	numDevices, _ := DeviceCount()
+
+	for i := uint(0); i < numDevices; i++ {
+		handle, _ := DeviceHandleByIndex(i)
+
+		currentSerial, _ := handle.SerialNumber()
+
+		if currentSerial == serial { return &handle, nil }
+	}
+
+	return nil, errors.New("could not find device with serial number")
 }
 
 // MinorNumber returns Minor number:
