@@ -690,6 +690,18 @@ func TestStaticInfo(t *testing.T) {
 	assert.Nil(t, err, err)
 }
 
+func TestNewEventSet(t *testing.T) {
+	err := Initialize()
+	assert.Nil(t, err, err)
+
+	eventSet := NewEventSet()
+
+	DeleteEventSet(eventSet)
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
 func printDuration(msg string, duration time.Duration) {
 	log.Printf("%v: %v", msg, duration)
 }
