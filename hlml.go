@@ -16,12 +16,13 @@
 
 package gohlml
 
-// #cgo CFLAGS: -I${SRCDIR}/hlml/
-// #cgo LDFLAGS: "${SRCDIR}/hlml/libhlml.a" -ldl -Wl,--unresolved-symbols=ignore-in-object-files
+// #cgo CFLAGS: -I${SRCDIR}/
+// #cgo LDFLAGS: "${SRCDIR}/libhlml.a" -ldl -Wl,--unresolved-symbols=ignore-in-object-files
 // #include "hlml.h"
 // #include <stdlib.h>
 import "C"
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"unsafe"
@@ -45,7 +46,7 @@ type EventSet struct{ set C.hlml_event_set_t }
 
 // Event contains uuid and event type
 type Event struct {
-	UUID  string
+	Serial  string
 	Etype uint64
 }
 
@@ -128,6 +129,21 @@ func DeviceHandleByUUID(uuid string) (Device, error) {
 
 	rc := C.hlml_device_get_handle_by_UUID(cstr, &dev)
 	return Device{dev}, errorString(rc)
+}
+
+// DeviceHandleBySerial gets a handle to a particular device by serial number
+func DeviceHandleBySerial(serial string) (*Device, error) {
+	numDevices, _ := DeviceCount()
+
+	for i := uint(0); i < numDevices; i++ {
+		handle, _ := DeviceHandleByIndex(i)
+
+		currentSerial, _ := handle.SerialNumber()
+
+		if currentSerial == serial { return &handle, nil }
+	}
+
+	return nil, errors.New("could not find device with serial number")
 }
 
 // MinorNumber returns Minor number:
@@ -406,14 +422,14 @@ func SystemDriverVersion() (string, error) {
 	return string(driver), nil
 }
 
-func hlmlNewEventSet() EventSet {
+func NewEventSet() EventSet {
 	var set C.hlml_event_set_t
 	C.hlml_event_set_create(&set)
 
 	return EventSet{set}
 }
 
-func hlmlRegisterEventForDevice(es EventSet, event int, uuid string) error {
+func RegisterEventForDevice(es EventSet, event int, uuid string) error {
 
 	deviceHandle, err := DeviceHandleByUUID(uuid)
 
@@ -429,19 +445,19 @@ func hlmlRegisterEventForDevice(es EventSet, event int, uuid string) error {
 	return nil
 }
 
-func hlmlDeleteEventSet(es EventSet) {
+func DeleteEventSet(es EventSet) {
 	C.hlml_event_set_free(es.set)
 }
 
-func hlmlWaitForEvent(es EventSet, timeout uint) (Event, error) {
+func WaitForEvent(es EventSet, timeout uint) (Event, error) {
 	var data C.hlml_event_data_t
 
 	r := C.hlml_event_set_wait(es.set, &data, C.uint(timeout))
-	uuid, _ := Device{data.device}.UUID()
+	serial, _ := Device{data.device}.SerialNumber()
 
 	return Event{
-			UUID:  uuid,
-			Etype: uint64(data.event_type),
+			Serial: serial,
+			Etype: 	uint64(data.event_type),
 		},
 		errorString(r)
 }
