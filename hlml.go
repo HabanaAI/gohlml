@@ -404,6 +404,9 @@ func (d Device) EnergyConsumptionCounter() (uint64, error) {
 func (d Device) NumaNode() (*uint, error) {
 
 	busId, err := d.PCIBusID()
+	if err != nil {
+		return nil, err
+	}
 
 	b, err := ioutil.ReadFile(fmt.Sprintf("/sys/bus/pci/devices/%s/numa_node", strings.ToLower(busId)))
 	if err != nil {
