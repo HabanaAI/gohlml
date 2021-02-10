@@ -459,7 +459,7 @@ func NewEventSet() EventSet {
 
 func RegisterEventForDevice(es EventSet, event int, uuid string) error {
 
-	deviceHandle, err := DeviceHandleByUUID(uuid)
+	deviceHandle, err := DeviceHandleBySerial(uuid)
 
 	if err != nil {
 		return fmt.Errorf("hlml: device not found")
