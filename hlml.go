@@ -22,9 +22,12 @@ package gohlml
 // #include <stdlib.h>
 import "C"
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"strconv"
+	"strings"
 	"unsafe"
 )
 
@@ -398,6 +401,31 @@ func (d Device) EnergyConsumptionCounter() (uint64, error) {
 	return uint64(energy), errorString(rc)
 }
 
+func (d Device) NumaNode() (*uint, error) {
+
+	busId, err := d.PCIBusID()
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := ioutil.ReadFile(fmt.Sprintf("/sys/bus/pci/devices/%s/numa_node", strings.ToLower(busId)))
+	if err != nil {
+		// report nil if NUMA support isn't enabled
+		return nil, nil
+	}
+	node, err := strconv.ParseInt(string(bytes.TrimSpace(b)), 10, 8)
+	if err != nil {
+		return nil, fmt.Errorf("%v: %v", errors.New("failed to retrieve CPU affinity"), err)
+	}
+	if node < 0 {
+		return nil, nil
+	}
+
+	numaNode := uint(node)
+	return &numaNode, nil
+
+}
+
 // FWVersion returns the firmware version for a given device
 func FWVersion(idx uint) (string, string, error) {
 	kernel, err := ioutil.ReadFile(HLDriverPath + "/hl" + fmt.Sprint(idx) + "/armcp_kernel_ver")
@@ -431,7 +459,7 @@ func NewEventSet() EventSet {
 
 func RegisterEventForDevice(es EventSet, event int, uuid string) error {
 
-	deviceHandle, err := DeviceHandleByUUID(uuid)
+	deviceHandle, err := DeviceHandleBySerial(uuid)
 
 	if err != nil {
 		return fmt.Errorf("hlml: device not found")
