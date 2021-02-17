@@ -416,7 +416,7 @@ func TestECCAggregateErrors(t *testing.T) {
 	eccErr, err := dev.ECCAggregateErrors()
 	printDuration("ECCAggregateErrors()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get ecc aggregate errors")
-	assert.Equal(t, uint64(0), eccErr, "ECCVolatileErrors value should be 0")
+	assert.Equal(t, uint64(0), eccErr, "ECCAggregateErrors value should be 0")
 
 	err = Shutdown()
 	assert.Nil(t, err, err)
