@@ -162,7 +162,7 @@ func TestGetDeviceName(t *testing.T) {
 	start := time.Now()
 	name, err := dev.Name()
 	printDuration("Name()", time.Since(start))
-	
+
 	assert.Nil(t, err, "Should be able to get device UUID")
 	assert.Greater(t, len(name), 0, "Name should have a length")
 
@@ -367,7 +367,7 @@ func TestTemperature(t *testing.T) {
 	printDuration("Temperature()", time.Since(start))
 
 	assert.Nil(t, err, "Should be able to get temperature")
-	assert.GreaterOrEqual(t, onchip, uint(30), "onchip temperature value cannot be less than 0")
+	assert.GreaterOrEqual(t, onchip, uint(0), "onchip temperature value cannot be less than 0")
 	assert.LessOrEqual(t, onchip, uint(80), "onchip temperature value cannot be more than 80")
 
 	// onboard check

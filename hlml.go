@@ -16,8 +16,8 @@
 
 package gohlml
 
-// #cgo CFLAGS: -I${SRCDIR}/
-// #cgo LDFLAGS: "${SRCDIR}/libhlml.a" -ldl -Wl,--unresolved-symbols=ignore-in-object-files
+// #cgo CFLAGS: -I/usr/include/habanalabs/
+// #cgo LDFLAGS: "/usr/lib/habanalabs/libhlml.so" -ldl -Wl,--unresolved-symbols=ignore-in-object-files
 // #include "hlml.h"
 // #include <stdlib.h>
 import "C"
