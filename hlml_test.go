@@ -1,16 +1,15 @@
 package gohlml
 
 import (
+	"log"
 	"testing"
 	"time"
-	"log"
+
 	"github.com/stretchr/testify/assert"
 )
 
-
 func TestInitialize(t *testing.T) {
 	cnt, err := DeviceCount()
-
 	assert.NotNil(t, err, "Error should be raised when HLML isn't enabled")
 
 	start := time.Now()
@@ -84,17 +83,7 @@ func TestDeviceHandleByIndex(t *testing.T) {
 }
 
 func TestGetDeviceByUUID(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
-
+	dev := prepareDevice(t)
 	start := time.Now()
 	uuid, err := dev.UUID()
 	printDuration("UUID()", time.Since(start))
@@ -123,15 +112,7 @@ func TestGetDeviceByUUID(t *testing.T) {
 }
 
 func TestGetDeviceBySerial(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+	dev := prepareDevice(t)
 
 	serial, err := dev.SerialNumber()
 	assert.Nil(t, err, "Should be able to get device serial")
@@ -148,16 +129,7 @@ func TestGetDeviceBySerial(t *testing.T) {
 }
 
 func TestGetDeviceName(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+	dev := prepareDevice(t)
 
 	start := time.Now()
 	name, err := dev.Name()
@@ -171,19 +143,10 @@ func TestGetDeviceName(t *testing.T) {
 }
 
 func TestPCIFunctions(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+	dev := prepareDevice(t)
 
 	start := time.Now()
-	_, err = dev.PCIDomain()
+	_, err := dev.PCIDomain()
 	printDuration("PCIDomain()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get PCI domain")
 
@@ -192,23 +155,23 @@ func TestPCIFunctions(t *testing.T) {
 	printDuration("PCIBus()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get PCI bus")
 
-    start = time.Now()
+	start = time.Now()
 	busID, err := dev.PCIBusID()
 	printDuration("PCIBusID()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get PCI busID")
 	assert.Greater(t, len(busID), 0, "busID should have a length")
 
-    start = time.Now()
+	start = time.Now()
 	_, err = dev.PCIID()
 	printDuration("PCIID()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get PCIID")
 
-    start = time.Now()
+	start = time.Now()
 	_, err = dev.PCILinkSpeed()
 	printDuration("PCILinkSpeed()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get PCILinkSpeed")
 
-    start = time.Now()
+	start = time.Now()
 	_, err = dev.PCILinkWidth()
 	printDuration("PCILinkWidth()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get PCILinkSpeed")
@@ -218,16 +181,7 @@ func TestPCIFunctions(t *testing.T) {
 }
 
 func TestMemoryMetrics(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+	dev := prepareDevice(t)
 
 	start := time.Now()
 	total, used, free, err := dev.MemoryInfo()
@@ -250,19 +204,10 @@ func TestMemoryMetrics(t *testing.T) {
 }
 
 func TestUtilizationInfo(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+	dev := prepareDevice(t)
 
 	start := time.Now()
-	_, err = dev.UtilizationInfo()
+	_, err := dev.UtilizationInfo()
 	printDuration("UtilizationInfo()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get UtilizationInfo")
 
@@ -271,73 +216,37 @@ func TestUtilizationInfo(t *testing.T) {
 }
 
 func TestClockMetrics(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
+	dev := prepareDevice(t)
 
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
-
+	// Current freq for clocks
 	start := time.Now()
 	freqSoc, socErr := dev.SOCClockInfo()
 	printDuration("SOCClockInfo()", time.Since(start))
 
+	// Max freq for clocks
 	start = time.Now()
-	freqIC, icErr := dev.ICClockInfo()
-	printDuration("ICClockInfo()", time.Since(start))
+	maxFreqSoc, maxSocErr := dev.SOCClockMax()
+	printDuration("SOCClockMax()", time.Since(start))
 
-	start = time.Now()
-	freqMME, mmeErr := dev.MMEClockInfo()
-	printDuration("MMEClockInfo", time.Since(start))
-
-	start = time.Now()
-	freqTPC, tpcErr := dev.TPCClockInfo()
-	printDuration("TPCClockInfo()", time.Since(start))
-
-
-	if socErr != nil && icErr != nil && mmeErr != nil && tpcErr != nil {
+	if socErr != nil {
 		assert.Equal(t, false, true, "Error retrieving any clock")
+	}
+
+	if maxSocErr != nil {
+		assert.Equal(t, false, true, "Error retrieving any clock for maximum frequency")
 	}
 
 	if socErr == nil {
 		assert.GreaterOrEqual(t, freqSoc, uint(1000), "soc frequency too low")
-		assert.LessOrEqual(t, freqSoc, uint(3000), "soc frequency too high")
+		assert.LessOrEqual(t, freqSoc, uint(maxFreqSoc), "soc frequency too high")
 	}
 
-	if icErr == nil {
-		assert.GreaterOrEqual(t, freqIC, uint(50), "ic frequency too low")
-		assert.LessOrEqual(t, freqIC, uint(3000), "ic frequency too high")
-	}
-
-	if mmeErr == nil {
-		assert.GreaterOrEqual(t, freqMME, uint(50), "mme frequency too low")
-		assert.LessOrEqual(t, freqMME, uint(3000), "mme frequency too high")
-	}
-
-	if tpcErr == nil {
-		assert.GreaterOrEqual(t, freqTPC, uint(50), "tpc frequency too low")
-		assert.LessOrEqual(t, freqTPC, uint(3000), "tpc frequency too high")
-	}
-
-	err = Shutdown()
+	err := Shutdown()
 	assert.Nil(t, err, err)
 }
 
 func TestPowerUsage(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+	dev := prepareDevice(t)
 
 	start := time.Now()
 	power, err := dev.PowerUsage()
@@ -350,89 +259,85 @@ func TestPowerUsage(t *testing.T) {
 	assert.Nil(t, err, err)
 }
 
-func TestTemperature(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+func TestTemperatureOnBoard(t *testing.T) {
+	dev := prepareDevice(t)
 
 	start := time.Now()
-	onchip, onboard, err := dev.Temperature()
+	onboard, err := dev.TemperatureOnBoard()
 	printDuration("Temperature()", time.Since(start))
 
 	assert.Nil(t, err, "Should be able to get temperature")
-	assert.GreaterOrEqual(t, onchip, uint(0), "onchip temperature value cannot be less than 0")
-	assert.LessOrEqual(t, onchip, uint(80), "onchip temperature value cannot be more than 80")
 
-	// onboard check
 	assert.GreaterOrEqual(t, onboard, uint(25), "onboard temperature value cannot be less than 0")
 	assert.LessOrEqual(t, onboard, uint(80), "onboard temperature value cannot be more than 80")
 
 	err = Shutdown()
 	assert.Nil(t, err, err)
 }
-
-func TestECCVolatileErrors(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+func TestTemperatureOnChip(t *testing.T) {
+	dev := prepareDevice(t)
 
 	start := time.Now()
-	eccErr, err := dev.ECCVolatileErrors()
-	printDuration("ECCVolatileErrors()", time.Since(start))
-	assert.Nil(t, err, "Should be able to get ecc volatile errors")
-	assert.Equal(t, uint64(0), eccErr, "ECCVolatileErrors value should be 0")
+	onchip, err := dev.TemperatureOnChip()
+	printDuration("Temperature()", time.Since(start))
+
+	assert.Nil(t, err, "Should be able to get temperature")
+	assert.GreaterOrEqual(t, onchip, uint(0), "onchip temperature value cannot be less than 0")
+	assert.LessOrEqual(t, onchip, uint(80), "onchip temperature value cannot be more than 80")
 
 	err = Shutdown()
 	assert.Nil(t, err, err)
 }
 
-func TestECCAggregateErrors(t *testing.T) {
-	err := Initialize()
+func TestTemperatureThresholds(t *testing.T) {
+	dev := prepareDevice(t)
+	testCases := []struct {
+		name string
+		test func() (uint, error)
+	}{
+		{name: "Shutdown Temperature Threshold", test: dev.TemperatureThresholdShutdown},
+		{name: "Slowdown Temperature Threshold", test: dev.TemperatureThresholdSlowdown},
+		{name: "Memory Temperature Threshold", test: dev.TemperatureThresholdMemory},
+		{name: "GPU Temperature Threshold", test: dev.TemperatureThresholdGPU},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			start := time.Now()
+			temp, err := tc.test()
+			printDuration(tc.name, time.Since(start))
+			assert.Nil(t, err, "Should not get an error when getting the temperature threshold")
+			assert.Greater(t, temp, uint(0), "Threshold should be greater than 0")
+		})
+	}
+	err := Shutdown()
 	assert.Nil(t, err, err)
+}
 
-	cnt, err := DeviceCount()
+func TestPowerManagementDefaultLimit(t *testing.T) {
+	dev := prepareDevice(t)
 
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
+	limit, err := dev.PowerManagementDefaultLimit()
+	assert.Nil(t, err, "Should be able to get the power management default limit")
+	assert.Greater(t, limit, uint(0), "limit should be greater than 0")
 
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
 
-	start := time.Now()
-	eccErr, err := dev.ECCAggregateErrors()
-	printDuration("ECCAggregateErrors()", time.Since(start))
-	assert.Nil(t, err, "Should be able to get ecc aggregate errors")
-	assert.Equal(t, uint64(0), eccErr, "ECCAggregateErrors value should be 0")
+func TestECCMode(t *testing.T) {
+	dev := prepareDevice(t)
+
+	currentECC, pendingECC, err := dev.ECCMode()
+	assert.Nil(t, err, "Should be able to get the ecc mode")
+	assert.GreaterOrEqual(t, currentECC, uint(0), "current ECC Mode should be Greater or equal than 0")
+	assert.GreaterOrEqual(t, pendingECC, uint(0), "current ECC Mode should be Greater or equal than 0")
 
 	err = Shutdown()
 	assert.Nil(t, err, err)
 }
 
 func TestHLRevision(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+	dev := prepareDevice(t)
 
 	start := time.Now()
 	rev, err := dev.HLRevision()
@@ -445,16 +350,7 @@ func TestHLRevision(t *testing.T) {
 }
 
 func TestPCBVersion(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+	dev := prepareDevice(t)
 
 	start := time.Now()
 	pcbVer, err := dev.PCBVersion()
@@ -467,16 +363,7 @@ func TestPCBVersion(t *testing.T) {
 }
 
 func TestPCBAssemblyVersion(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+	dev := prepareDevice(t)
 
 	start := time.Now()
 	pcbVer, err := dev.PCBAssemblyVersion()
@@ -489,16 +376,7 @@ func TestPCBAssemblyVersion(t *testing.T) {
 }
 
 func TestSerialNumber(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+	dev := prepareDevice(t)
 
 	start := time.Now()
 	serial, err := dev.SerialNumber()
@@ -511,19 +389,10 @@ func TestSerialNumber(t *testing.T) {
 }
 
 func TestBoardID(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+	dev := prepareDevice(t)
 
 	start := time.Now()
-	_, err = dev.BoardID()
+	_, err := dev.BoardID()
 	printDuration("BoardID()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get board id")
 
@@ -532,19 +401,10 @@ func TestBoardID(t *testing.T) {
 }
 
 func TestPCIeTX(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+	dev := prepareDevice(t)
 
 	start := time.Now()
-	_, err = dev.PCIeTX()
+	_, err := dev.PCIeTX()
 	printDuration("PCIeTX()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get pcie transmit id")
 
@@ -553,19 +413,10 @@ func TestPCIeTX(t *testing.T) {
 }
 
 func TestPCIeRX(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+	dev := prepareDevice(t)
 
 	start := time.Now()
-	_, err = dev.PCIeRX()
+	_, err := dev.PCIeRX()
 	printDuration("PCIeRX()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get pcie receive id")
 
@@ -574,16 +425,7 @@ func TestPCIeRX(t *testing.T) {
 }
 
 func TestPCIReplayCounter(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+	dev := prepareDevice(t)
 
 	start := time.Now()
 	replayCnt, err := dev.PCIReplayCounter()
@@ -596,63 +438,36 @@ func TestPCIReplayCounter(t *testing.T) {
 }
 
 // TODO: PCIe Data collection is broken in v0.11
-/*
+
 func TestPCIeLinkGeneration(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+	dev := prepareDevice(t)
 
 	start := time.Now()
 	gen, err := dev.PCIeLinkGeneration()
 	printDuration("PCIeLinkGeneration()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get pcie link generation")
-	assert.Equal(t, int(4), gen, "PCIeLinkGeneration should be 4") // maybe 5
+	assert.GreaterOrEqual(t, gen, uint(1), "PCIeLinkGeneration should be less than 5") // maybe 5
+	assert.LessOrEqual(t, gen, uint(5), "PCIeLinkGeneration should be greater 1")      // maybe 5
 
 	err = Shutdown()
 	assert.Nil(t, err, err)
 }
-*/
-/*
+
 func TestPCIeLinkWidth(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+	dev := prepareDevice(t)
 
 	start := time.Now()
 	width, err := dev.PCIeLinkWidth()
 	printDuration("PCIeLinkWidth()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get pcie link width")
-	assert.Equal(t, int(16), width, "PCIeLinkWidth should be 16")
+	assert.Equal(t, uint(16), width, "PCIeLinkWidth should be 16")
 
 	err = Shutdown()
 	assert.Nil(t, err, err)
 }
-*/
+
 func TestEnergyConsumptionCounter(t *testing.T) {
-	err := Initialize()
-	assert.Nil(t, err, err)
-
-	cnt, err := DeviceCount()
-
-	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
-	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
-
-	dev, err := DeviceHandleByIndex(0)
-	assert.Nil(t, err, "Should be able to get device handle")
+	dev := prepareDevice(t)
 
 	start := time.Now()
 	energy, err := dev.EnergyConsumptionCounter()
@@ -682,7 +497,7 @@ func TestStaticInfo(t *testing.T) {
 
 	start = time.Now()
 	ver, err := SystemDriverVersion()
-	printDuration( "SystemDriverVersion()", time.Since(start))
+	printDuration("SystemDriverVersion()", time.Since(start))
 	assert.Nil(t, err, "Should be able to get SystemDriverVersion")
 	assert.Greater(t, len(ver), 7, "driver version too short")
 
@@ -706,3 +521,103 @@ func printDuration(msg string, duration time.Duration) {
 	log.Printf("%v: %v", msg, duration)
 }
 
+func TestMacAddressInfo(t *testing.T) {
+	dev := prepareDevice(t)
+
+	start := time.Now()
+	ports, err := dev.MacAddressInfo()
+	printDuration("MacAddressInfo()", time.Since(start))
+	assert.Nil(t, err, "Should be able to get MacAddress info")
+	assert.Equal(t, len(ports), int(10), "there should be 10 ports in a device")
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
+// func TestNicLinkStatus(t *testing.T) {
+// 	dev := prepareDevice(t)
+
+// 	start := time.Now()
+// 	up, err := dev.NicLinkStatus(0)
+// 	printDuration("NicLinkStatus()", time.Since(start))
+// 	assert.Nil(t, err, "Should be able to get NicLinkStatus info")
+// 	assert.GreaterOrEqual(t, up, uint(0), "Link status should be up (1) or down (0)")
+
+// 	err = Shutdown()
+// 	assert.Nil(t, err, err)
+// }
+
+// func TestThermalViolationStatus(t *testing.T) {
+// 	dev := prepareDevice(t)
+
+// 	start := time.Now()
+// 	_, _, err := dev.ThermalViolationStatus()
+// 	printDuration("TestThermalViolationStatus()", time.Since(start))
+// 	assert.Nil(t, err, "Should be able to get thermal violation status")
+// 	err = Shutdown()
+// 	assert.Nil(t, err, err)
+// }
+// func TestPowerViolationStatus(t *testing.T) {
+// 	dev := prepareDevice(t)
+
+// 	start := time.Now()
+// 	_, _, err := dev.PowerViolationStatus()
+// 	printDuration("PowerViolationStatus()", time.Since(start))
+// 	assert.Nil(t, err, "Should be able to get power violation status")
+
+// 	err = Shutdown()
+// 	assert.Nil(t, err, err)
+// }
+
+func TestReplacedRowDoubleBitECC(t *testing.T) {
+	dev := prepareDevice(t)
+
+	start := time.Now()
+	count, err := dev.ReplacedRowDoubleBitECC()
+	printDuration("ReplacedRowDoubleBitECC()", time.Since((start)))
+	assert.Nil(t, err, "Should be able to get the rows with double-bit errors")
+	assert.Equal(t, uint(0), count, "Expected 0 rows with error, got %d", count)
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
+func TestReplacedRowSingleBitECC(t *testing.T) {
+	dev := prepareDevice(t)
+
+	start := time.Now()
+	count, err := dev.ReplacedRowSingleBitECC()
+	printDuration("ReplacedRowSingleBitECC()", time.Since((start)))
+	assert.Nil(t, err, "Should be able to get the rows with single-bit errors")
+	assert.Equal(t, uint(0), count, "Expected 0 rows with error, got %d", count)
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
+func TestIsReplacedRowsPendingStatus(t *testing.T) {
+	dev := prepareDevice(t)
+
+	start := time.Now()
+	isPending, err := dev.IsReplacedRowsPendingStatus()
+	printDuration("isReplacedRowsPendingStatus()", time.Since(start))
+	assert.Nil(t, err, "Should be able to get pending rows status")
+	assert.IsType(t, int(1), isPending, "Function should return a bool")
+
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
+func prepareDevice(t *testing.T) Device {
+	err := Initialize()
+	assert.Nil(t, err, err)
+
+	cnt, err := DeviceCount()
+
+	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
+	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
+
+	dev, err := DeviceHandleByIndex(0)
+	assert.Nil(t, err, "Should be able to get device handle")
+	return dev
+}

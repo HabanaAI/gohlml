@@ -16,10 +16,11 @@
 
 package gohlml
 
-// #cgo CFLAGS: -I/usr/include/habanalabs/
-// #cgo LDFLAGS: "/usr/lib/habanalabs/libhlml.so" -ldl -Wl,--unresolved-symbols=ignore-in-object-files
-// #include "hlml.h"
-// #include <stdlib.h>
+/*
+#cgo LDFLAGS: "/usr/lib/habanalabs/libhlml.so" -ldl -Wl,--unresolved-symbols=ignore-all
+#include "hlml.h"
+#include <stdlib.h>
+*/
 import "C"
 import (
 	"bytes"
@@ -39,6 +40,8 @@ const (
 	HLDriverPath = "/sys/class/habanalabs"
 	// HLModulePath indicates on habana module dir
 	HLModulePath = "/sys/module/habanalabs"
+	// BITSPerLong repsenets 64 bits in logs
+	BITSPerLong = 64
 )
 
 // Device struct maps to C HLML structure
@@ -49,8 +52,8 @@ type EventSet struct{ set C.hlml_event_set_t }
 
 // Event contains uuid and event type
 type Event struct {
-	Serial  string
-	Etype uint64
+	Serial string
+	Etype  uint64
 }
 
 // PCIInfo contains the PCI properties of the device
@@ -68,28 +71,28 @@ func errorString(ret C.hlml_return_t) error {
 	case C.HLML_ERROR_UNINITIALIZED:
 		return fmt.Errorf("HLML not initialized")
 	case C.HLML_ERROR_INVALID_ARGUMENT:
-		return fmt.Errorf("Invalid argument")
+		return fmt.Errorf("invalid argument")
 	case C.HLML_ERROR_NOT_SUPPORTED:
-		return fmt.Errorf("Not supported")
+		return fmt.Errorf("not supported")
 	case C.HLML_ERROR_ALREADY_INITIALIZED:
 		return fmt.Errorf("HLML already initialized")
 	case C.HLML_ERROR_NOT_FOUND:
-		return fmt.Errorf("Not found")
+		return fmt.Errorf("not found")
 	case C.HLML_ERROR_INSUFFICIENT_SIZE:
-		return fmt.Errorf("Insufficient size")
+		return fmt.Errorf("insufficient size")
 	case C.HLML_ERROR_DRIVER_NOT_LOADED:
-		return fmt.Errorf("Driver not loaded")
+		return fmt.Errorf("driver not loaded")
 	case C.HLML_ERROR_AIP_IS_LOST:
 		return fmt.Errorf("AIP is lost")
 	case C.HLML_ERROR_MEMORY:
-		return fmt.Errorf("Memory error")
+		return fmt.Errorf("memory error")
 	case C.HLML_ERROR_NO_DATA:
-		return fmt.Errorf("No data")
+		return fmt.Errorf("no data")
 	case C.HLML_ERROR_UNKNOWN:
-		return fmt.Errorf("Unknown error")
+		return fmt.Errorf("unknown error")
 	}
 
-	return fmt.Errorf("Invalid HLML error return code %d", ret)
+	return fmt.Errorf("invalid HLML error return code %d", ret)
 }
 
 // Initialize initializes the HLML library
@@ -143,7 +146,9 @@ func DeviceHandleBySerial(serial string) (*Device, error) {
 
 		currentSerial, _ := handle.SerialNumber()
 
-		if currentSerial == serial { return &handle, nil }
+		if currentSerial == serial {
+			return &handle, nil
+		}
 	}
 
 	return nil, errors.New("could not find device with serial number")
@@ -212,7 +217,8 @@ func (d Device) PCILinkSpeed() (string, error) {
 	var pci C.hlml_pci_info_t
 
 	rc := C.hlml_device_get_pci_info(d.dev, &pci)
-	return C.GoString(&pci.caps.link_speed[0]), errorString(rc)
+	speed := C.GoString(&pci.caps.link_speed[0])
+	return strings.Replace(speed, "0x", "", -1), errorString(rc)
 }
 
 // PCILinkWidth returns the current PCI link width for a given device
@@ -220,13 +226,13 @@ func (d Device) PCILinkWidth() (string, error) {
 	var pci C.hlml_pci_info_t
 
 	rc := C.hlml_device_get_pci_info(d.dev, &pci)
+
 	return C.GoString(&pci.caps.link_width[0]), errorString(rc)
 }
 
 // MemoryInfo returns the current memory usage in bytes for total, used, free
 func (d Device) MemoryInfo() (uint64, uint64, uint64, error) {
 	var mem C.hlml_memory_t
-
 	rc := C.hlml_device_get_memory_info(d.dev, &mem)
 	return uint64(mem.total), uint64(mem.used), uint64(mem.total - mem.used), errorString(rc)
 }
@@ -247,68 +253,103 @@ func (d Device) SOCClockInfo() (uint, error) {
 	return uint(freq), errorString(rc)
 }
 
-// ICClockInfo returns the IC clock frequency for a given device
-func (d Device) ICClockInfo() (uint, error) {
+// SOCClockMax returns the maximum SoC clock frequency for a given device
+func (d Device) SOCClockMax() (uint, error) {
 	var freq C.uint
-
-	rc := C.hlml_device_get_clock_info(d.dev, C.HLML_CLOCK_IC, &freq)
+	rc := C.hlml_device_get_max_clock_info(d.dev, C.HLML_CLOCK_SOC, &freq)
 	return uint(freq), errorString(rc)
 }
 
-// MMEClockInfo returns the MME clock frequency for a given device
-func (d Device) MMEClockInfo() (uint, error) {
+// ICClockMax returns the maximum IC clock frequency for a given device
+func (d Device) ICClockMax() (uint, error) {
 	var freq C.uint
-
-	rc := C.hlml_device_get_clock_info(d.dev, C.HLML_CLOCK_MME, &freq)
+	rc := C.hlml_device_get_max_clock_info(d.dev, C.HLML_CLOCK_IC, &freq)
 	return uint(freq), errorString(rc)
 }
 
-// TPCClockInfo returns the TPC clock frequency for a given device
-func (d Device) TPCClockInfo() (uint, error) {
+// MMEClockMax returns the maximum MME clock frequency for a given device
+func (d Device) MMEClockMax() (uint, error) {
 	var freq C.uint
+	rc := C.hlml_device_get_max_clock_info(d.dev, C.HLML_CLOCK_MME, &freq)
+	return uint(freq), errorString(rc)
+}
 
-	rc := C.hlml_device_get_clock_info(d.dev, C.HLML_CLOCK_TPC, &freq)
+// TPCClockMax returns the maximum TPC clock frequency for a given device
+func (d Device) TPCClockMax() (uint, error) {
+	var freq C.uint
+	rc := C.hlml_device_get_max_clock_info(d.dev, C.HLML_CLOCK_TPC, &freq)
 	return uint(freq), errorString(rc)
 }
 
 // PowerUsage returns the power usage in milliwatts for a given device
 func (d Device) PowerUsage() (uint, error) {
 	var power C.uint
-
 	rc := C.hlml_device_get_power_usage(d.dev, &power)
 	return uint(power), errorString(rc)
 }
 
-// Temperature returns the temperature in celsius for a given device
-func (d Device) Temperature() (uint, uint, error) {
+// TemperatureOnBoard returns the temperature in celsius for a device board
+func (d Device) TemperatureOnBoard() (uint, error) {
 	var onBoard C.uint
-	var onChip C.uint
-
 	rc := C.hlml_device_get_temperature(d.dev, C.HLML_TEMPERATURE_ON_BOARD, &onBoard)
-	rc = C.hlml_device_get_temperature(d.dev, C.HLML_TEMPERATURE_ON_AIP, &onChip)
-	return uint(onBoard), uint(onChip), errorString(rc)
+	return uint(onBoard), errorString(rc)
 }
 
-// ECCVolatileErrors returns the running out of ECC errors in volatile memory
-func (d Device) ECCVolatileErrors() (uint64, error) {
-	var eccErr C.ulonglong
-
-	rc := C.hlml_device_get_total_ecc_errors(d.dev, C.HLML_MEMORY_ERROR_TYPE_UNCORRECTED, C.HLML_VOLATILE_ECC, &eccErr)
-	return uint64(eccErr), errorString(rc)
+// TemperatureOnChip returns the temperature in celsius for a the device chip
+func (d Device) TemperatureOnChip() (uint, error) {
+	var onChip C.uint
+	rc := C.hlml_device_get_temperature(d.dev, C.HLML_TEMPERATURE_ON_AIP, &onChip)
+	return uint(onChip), errorString(rc)
 }
 
-// ECCAggregateErrors returns the running out of ECC errors in aggregate memory
-func (d Device) ECCAggregateErrors() (uint64, error) {
-	var eccErr C.ulonglong
+// TemperatureThresholdShutdown Retrieves the known temperature threshold for the AIP with the specified threshold type in degrees
+func (d Device) TemperatureThresholdShutdown() (uint, error) {
+	var temp C.uint
+	rc := C.hlml_device_get_temperature_threshold(d.dev, C.HLML_TEMPERATURE_THRESHOLD_SHUTDOWN, &temp)
+	return uint(temp), errorString(rc)
+}
 
-	rc := C.hlml_device_get_total_ecc_errors(d.dev, C.HLML_MEMORY_ERROR_TYPE_UNCORRECTED, C.HLML_AGGREGATE_ECC, &eccErr)
-	return uint64(eccErr), errorString(rc)
+// TemperatureThresholdSlowdown Retrieves the known temperature threshold for the AIP with the specified threshold type in degrees
+func (d Device) TemperatureThresholdSlowdown() (uint, error) {
+	var temp C.uint
+	rc := C.hlml_device_get_temperature_threshold(d.dev, C.HLML_TEMPERATURE_THRESHOLD_SLOWDOWN, &temp)
+	return uint(temp), errorString(rc)
+}
+
+// TemperatureThresholdMemory Retrieves the known temperature threshold for the AIP with the specified threshold type in degrees
+func (d Device) TemperatureThresholdMemory() (uint, error) {
+	var temp C.uint
+	rc := C.hlml_device_get_temperature_threshold(d.dev, C.HLML_TEMPERATURE_THRESHOLD_MEM_MAX, &temp)
+	return uint(temp), errorString(rc)
+}
+
+// TemperatureThresholdGPU Retrieves the known temperature threshold for the AIP with the specified threshold type in degrees
+func (d Device) TemperatureThresholdGPU() (uint, error) {
+	var temp C.uint
+	rc := C.hlml_device_get_temperature_threshold(d.dev, C.HLML_TEMPERATURE_THRESHOLD_GPU_MAX, &temp)
+	return uint(temp), errorString(rc)
+}
+
+// PowerManagementDefaultLimitRetrieves default power management limit on this device, in milliwatts.
+// Default power management limit is a power management limit that the device boots with.
+func (d Device) PowerManagementDefaultLimit() (uint, error) {
+	var limit C.uint
+	rc := C.hlml_device_get_power_management_default_limit(d.dev, &limit)
+	return uint(limit), errorString(rc)
+}
+
+// ECCMode retrieves the current and pending ECC modes for the device
+// 1 - ECCMode enabled
+// 0 - ECCMode disabled
+func (d Device) ECCMode() (uint, uint, error) {
+	var current, pending C.hlml_enable_state_t
+	rc := C.hlml_device_get_ecc_mode(d.dev, &current, &pending)
+	return uint(current), uint(pending), errorString(rc)
 }
 
 // HLRevision returns the revision of the HL library
 func (d Device) HLRevision() (int, error) {
 	var rev C.int
-
 	rc := C.hlml_device_get_hl_revision(d.dev, &rev)
 	return int(rev), errorString(rc)
 }
@@ -370,6 +411,7 @@ func (d Device) PCIReplayCounter() (uint, error) {
 }
 
 // PCIeLinkGeneration returns PCIe replay count
+// MUST run with SUDO/priviledged
 func (d Device) PCIeLinkGeneration() (uint, error) {
 	var gen C.uint
 
@@ -377,7 +419,7 @@ func (d Device) PCIeLinkGeneration() (uint, error) {
 	return uint(gen), errorString(rc)
 }
 
-// PCIeLinkWidth returns PCIe replay count
+// PCIeLinkWidth returns PCIe link width
 func (d Device) PCIeLinkWidth() (uint, error) {
 	var width C.uint
 
@@ -393,7 +435,7 @@ func (d Device) ClockThrottleReasons() (uint64, error) {
 	return uint64(reasons), errorString(rc)
 }
 
-// EnergyConsumptionCounter returns current clock throttle reasons
+// EnergyConsumptionCounter returns energy consumption
 func (d Device) EnergyConsumptionCounter() (uint64, error) {
 	var energy C.ulonglong
 
@@ -401,8 +443,61 @@ func (d Device) EnergyConsumptionCounter() (uint64, error) {
 	return uint64(energy), errorString(rc)
 }
 
-func (d Device) NumaNode() (*uint, error) {
+// MacAddressInfo retrieves the masks for supported ports and external ports.
+func (d Device) MacAddressInfo() (map[int]string, error) {
+	var mask [C.PORTS_ARR_SIZE]C.uint64_t
+	var extMask [C.PORTS_ARR_SIZE]C.uint64_t
 
+	rc := C.hlml_get_mac_addr_info(d.dev, &mask[0], &extMask[0])
+
+	ports := make(map[int]string)
+	maskBinary := strconv.FormatInt(int64(mask[0]), 2)
+	extMaskBinary := strconv.FormatInt(int64(extMask[0]), 2)
+	for i := len(maskBinary) - 1; i >= 0; i-- {
+		if maskBinary[i] == 49 && extMaskBinary[i] == 49 {
+			ports[len(maskBinary)-i-1] = "external"
+		} else if maskBinary[i] == 49 && extMaskBinary[i] == 48 {
+			ports[len(extMaskBinary)-i-1] = "internal"
+		}
+	}
+
+	return ports, errorString(rc)
+}
+
+// NicLinkStatus gets a port and checks its status.
+// return 1 (up) or 0 (down)
+func (d Device) NicLinkStatus(port uint) (uint, error) {
+	var up C.bool
+	rc := C.hlml_nic_get_link(d.dev, C.uint(port), &up)
+	if up {
+		return uint(1), errorString(rc)
+	}
+	return uint(0), errorString(rc)
+}
+
+// ReplacedRowDoubleBitECC returns the number of rows with double-bit ecc errors
+func (d Device) ReplacedRowDoubleBitECC() (uint, error) {
+	var rowsCount C.uint = 0
+	rc := C.hlml_device_get_replaced_rows(d.dev, C.HLML_ROW_REPLACEMENT_CAUSE_DOUBLE_BIT_ECC_ERROR, &rowsCount, nil)
+	return uint(rowsCount), errorString(rc)
+}
+
+// ReplacedRowSingleBitECC returns the number of rows with single-bit ecc errors
+func (d Device) ReplacedRowSingleBitECC() (uint, error) {
+	var rowsCount C.uint
+	rc := C.hlml_device_get_replaced_rows(d.dev, C.HLML_ROW_REPLACEMENT_CAUSE_MULTIPLE_SINGLE_BIT_ECC_ERRORS, &rowsCount, nil)
+	return uint(rowsCount), errorString(rc)
+}
+
+// IsReplacedRowsPendingStatus return 0 (false) or 1 (true) if there are any
+// rows need of replacement in a power cycle
+func (d Device) IsReplacedRowsPendingStatus() (int, error) {
+	var isPending C.hlml_enable_state_t
+	rc := C.hlml_device_get_replaced_rows_pending_status(d.dev, &isPending)
+	return int(isPending), errorString(rc)
+}
+
+func (d Device) NumaNode() (*uint, error) {
 	busId, err := d.PCIBusID()
 	if err != nil {
 		return nil, err
@@ -430,12 +525,12 @@ func (d Device) NumaNode() (*uint, error) {
 func FWVersion(idx uint) (string, string, error) {
 	kernel, err := ioutil.ReadFile(HLDriverPath + "/hl" + fmt.Sprint(idx) + "/armcp_kernel_ver")
 	if err != nil {
-		return "", "", fmt.Errorf("File reading error %s", err)
+		return "", "", fmt.Errorf("file reading error %s", err)
 	}
 
 	uboot, err := ioutil.ReadFile(HLDriverPath + "/hl" + fmt.Sprint(idx) + "/uboot_ver")
 	if err != nil {
-		return "", "", fmt.Errorf("File reading error %s", err)
+		return "", "", fmt.Errorf("file reading error %s", err)
 	}
 	return string(kernel), string(uboot), nil
 }
@@ -445,7 +540,7 @@ func SystemDriverVersion() (string, error) {
 	driver, err := ioutil.ReadFile(HLModulePath + "/version")
 
 	if err != nil {
-		return "", fmt.Errorf("File reading error %s", err)
+		return "", fmt.Errorf("file reading error %s", err)
 	}
 	return string(driver), nil
 }
@@ -485,7 +580,7 @@ func WaitForEvent(es EventSet, timeout uint) (Event, error) {
 
 	return Event{
 			Serial: serial,
-			Etype: 	uint64(data.event_type),
+			Etype:  uint64(data.event_type),
 		},
 		errorString(r)
 }
