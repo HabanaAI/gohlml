@@ -170,6 +170,19 @@ func TestGetDeviceName(t *testing.T) {
 	assert.Nil(t, err, err)
 }
 
+func TestDeviceModuleID(t *testing.T) {
+	dev := prepareDevice(t)
+
+	start := time.Now()
+	moduleID, err := dev.ModuleID()
+	printDuration("ModuleID()", time.Since(start))
+	assert.Nil(t, err, "Should be able to get moduleID")
+	// We assume we have max of 8 cards with moduleID: 0,1,2,3,4,5,6,7
+	assert.GreaterOrEqual(t, moduleID, uint(0), "ModuleID should be Greater or equal than 0")
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
 func TestPCIFunctions(t *testing.T) {
 	err := Initialize()
 	assert.Nil(t, err, err)

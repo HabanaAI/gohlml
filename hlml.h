@@ -9,6 +9,8 @@
 #define __HLML_H__
 
 #include <net/ethernet.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,18 +21,40 @@ extern "C" {
 #define PCI_LINK_INFO_LEN	10
 #define HL_FIELD_MAX_SIZE	32
 
-#define HLML_DEVICE_MAC_MAX_ADDRESSES	20
+#define PORTS_ARR_SIZE	2
 
-/* Event about single/double bit ECC errors. */
+#define HLML_DEVICE_MAC_MAX_ADDRESSES	48
+
+#define HLML_DEVICE_ROW_RPL_MAX		32
+
+/*
+ * Event HLML_EVENT_ECC_ERR is used with UNCORRECTABLE (DERR) only,
+ * i.e. only for DERR events, therefore, it is remained with this
+ * name only for backward compatability, although better use
+ * HLML_EVENT_ECC_DERR instead.
+ */
 #define HLML_EVENT_ECC_ERR		(1 << 0)
 /* Event about critical errors that occurred on the device */
 #define HLML_EVENT_CRITICAL_ERR		(1 << 1)
 /* Event about changes in clock rate */
 #define HLML_EVENT_CLOCK_RATE		(1 << 2)
+/* Memory location DRAM */
+#define HLML_EVENT_DRAM_ERR		(1 << 3)
+/* Event about double bit ECC errors. */
+#define HLML_EVENT_ECC_DERR		(1 << 0)
+/* Event about single bit ECC errors. */
+#define HLML_EVENT_ECC_SERR		(1 << 4)
 
 /* Bit masks representing all supported clocks throttling reasons */
 #define HLML_CLOCKS_THROTTLE_REASON_POWER	(1 << 0)
 #define HLML_CLOCKS_THROTTLE_REASON_THERMAL	(1 << 1)
+
+/* Scope of NUMA node for affinity queries */
+#define HLML_AFFINITY_SCOPE_NODE     0
+/* Scope of processor socket for affinity queries */
+#define HLML_AFFINITY_SCOPE_SOCKET   1
+
+typedef unsigned int hlml_affinity_scope_t;
 
 /* Enum for returned values of the different APIs */
 typedef enum hlml_return {
@@ -94,7 +118,8 @@ typedef struct hlml_memory {
 
 typedef enum hlml_temperature_sensors {
 	HLML_TEMPERATURE_ON_AIP = 0,
-	HLML_TEMPERATURE_ON_BOARD = 1
+	HLML_TEMPERATURE_ON_BOARD = 1,
+	HLML_TEMPERATURE_OTHER = 2,
 } hlml_temperature_sensors_t;
 
 typedef enum hlml_temperature_thresholds {
@@ -120,6 +145,12 @@ typedef enum hlml_memory_error_type {
 	HLML_MEMORY_ERROR_TYPE_UNCORRECTED = 1,
 	HLML_MEMORY_ERROR_TYPE_COUNT
 } hlml_memory_error_type_t;
+
+typedef enum hlml_memory_location_type {
+	HLML_MEMORY_LOCATION_SRAM = 0,
+	HLML_MEMORY_LOCATION_DRAM = 1,
+	HLML_MEMORY_LOCATION_COUNT
+} hlml_memory_location_type_t;
 
 typedef enum hlml_ecc_counter_type {
 	HLML_VOLATILE_ECC = 0,
@@ -159,11 +190,43 @@ typedef struct hlml_mac_info {
 	int id;
 } hlml_mac_info_t;
 
+typedef struct hlml_nic_stats_info {
+	uint32_t port;
+	char *str_buf;
+	uint64_t *val_buf;
+	uint32_t *num_of_counters_out;
+} hlml_nic_stats_info_t;
+
 typedef enum hlml_pcie_util_counter {
 	HLML_PCIE_UTIL_TX_BYTES = 0,
 	HLML_PCIE_UTIL_RX_BYTES = 1,
 	HLML_PCIE_UTIL_COUNT,
 } hlml_pcie_util_counter_t;
+
+typedef enum hlml_perf_policy_type {
+	HLML_PERF_POLICY_POWER = 0,
+	HLML_PERF_POLICY_THERMAL = 1,
+	HLML_PERF_POLICY_COUNT
+} hlml_perf_policy_type_t;
+
+typedef struct hlml_violation_time {
+	unsigned long long  reference_time;
+	unsigned long long  violation_time;
+} hlml_violation_time_t;
+
+typedef enum hlml_row_replacement_cause {
+	HLML_ROW_REPLACEMENT_CAUSE_MULTIPLE_SINGLE_BIT_ECC_ERRORS = 0,
+	HLML_ROW_REPLACEMENT_CAUSE_DOUBLE_BIT_ECC_ERROR = 1,
+	HLML_ROW_REPLACEMENT_CAUSE_COUNT
+} hlml_row_replacement_cause_t;
+
+typedef struct hlml_row_address {
+	uint8_t hbm_idx;
+	uint8_t pc;
+	uint8_t sid;
+	uint8_t bank_idx;
+	uint16_t row_addr;
+} hlml_row_address_t;
 
 /* supported APIs */
 hlml_return_t hlml_init(void);
@@ -208,9 +271,11 @@ hlml_return_t hlml_device_get_temperature_threshold(hlml_device_t device,
 				hlml_temperature_thresholds_t threshold_type,
 				unsigned int *temp);
 
+// API is not supported
 hlml_return_t hlml_device_get_persistence_mode(hlml_device_t device,
 						hlml_enable_state_t *mode);
 
+// API is not supported
 hlml_return_t hlml_device_get_performance_state(hlml_device_t device,
 						hlml_p_states_t *p_state);
 
@@ -227,6 +292,12 @@ hlml_return_t hlml_device_get_ecc_mode(hlml_device_t device,
 hlml_return_t hlml_device_get_total_ecc_errors(hlml_device_t device,
 					hlml_memory_error_type_t error_type,
 					hlml_ecc_counter_type_t counter_type,
+					unsigned long long *ecc_counts);
+
+hlml_return_t hlml_device_get_memory_error_counter(hlml_device_t device,
+					hlml_memory_error_type_t error_type,
+					hlml_ecc_counter_type_t counter_type,
+					hlml_memory_location_type_t location,
 					unsigned long long *ecc_counts);
 
 hlml_return_t hlml_device_get_uuid(hlml_device_t device,
@@ -262,6 +333,8 @@ hlml_return_t hlml_device_get_pcb_info(hlml_device_t device, hlml_pcb_info_t *pc
 
 hlml_return_t hlml_device_get_serial(hlml_device_t device, char *serial, unsigned int length);
 
+hlml_return_t hlml_device_get_module_id(hlml_device_t device, unsigned int *module_id);
+
 hlml_return_t hlml_device_get_board_id(hlml_device_t device, unsigned int* board_id);
 
 hlml_return_t hlml_device_get_pcie_throughput(hlml_device_t device,
@@ -282,9 +355,70 @@ hlml_return_t hlml_device_get_current_clocks_throttle_reasons(hlml_device_t devi
 hlml_return_t hlml_device_get_total_energy_consumption(hlml_device_t device,
 		unsigned long long *energy);
 
+hlml_return_t hlml_get_mac_addr_info(hlml_device_t device, uint64_t *mask, uint64_t *ext_mask);
+
+hlml_return_t hlml_nic_get_link(hlml_device_t device, uint32_t port, bool *up);
+
+hlml_return_t hlml_nic_get_statistics(hlml_device_t device, hlml_nic_stats_info_t *stats_info);
+
+hlml_return_t hlml_device_clear_cpu_affinity(hlml_device_t device);
+
+hlml_return_t hlml_device_get_cpu_affinity(hlml_device_t device,
+					   unsigned int cpu_set_size,
+					   unsigned long *cpu_set);
+
+hlml_return_t hlml_device_get_cpu_affinity_within_scope(hlml_device_t device,
+							unsigned int cpu_set_size,
+							unsigned long *cpu_set,
+							hlml_affinity_scope_t scope);
+
+hlml_return_t hlml_device_get_memory_affinity(hlml_device_t device,
+					      unsigned int node_set_size,
+					      unsigned long *node_set,
+					      hlml_affinity_scope_t scope);
+
+hlml_return_t hlml_device_set_cpu_affinity(hlml_device_t device);
+
+hlml_return_t hlml_device_get_violation_status(hlml_device_t device,
+					       hlml_perf_policy_type_t perf_policy_type,
+					       hlml_violation_time_t *viol_time);
+
+hlml_return_t hlml_device_get_replaced_rows(hlml_device_t device,
+					    hlml_row_replacement_cause_t cause,
+					    unsigned int *row_count,
+					    hlml_row_address_t *addresses);
+
+hlml_return_t hlml_device_get_replaced_rows_pending_status(hlml_device_t device,
+							   hlml_enable_state_t *is_pending);
+
+hlml_return_t hlml_get_hlml_version(char *version, unsigned int length);
+
+hlml_return_t hlml_get_driver_version(char *driver_version, unsigned int length);
+
+hlml_return_t hlml_get_model_number(hlml_device_t device, char *model_number,
+				    unsigned int length);
+
+hlml_return_t hlml_get_serial_number(hlml_device_t device, char *serial_number,
+				     unsigned int length);
+
+hlml_return_t hlml_get_firmware_fit_version(hlml_device_t device, char *firmware_fit,
+					    unsigned int length);
+
+hlml_return_t hlml_get_firmware_spi_version(hlml_device_t device, char *firmware_spi,
+					    unsigned int length);
+
+hlml_return_t hlml_get_fw_boot_version(hlml_device_t device, char *fw_boot_version,
+				       unsigned int length);
+
+hlml_return_t hlml_get_fw_os_version(hlml_device_t device, char *fw_os_version,
+				     unsigned int length);
+hlml_return_t hlml_get_cpld_version(hlml_device_t device, char *cpld_version,
+				    unsigned int length);
+
 #ifdef __cplusplus
 }   //extern "C"
 #endif
 
 #endif /* __HLML_H__ */
+
 

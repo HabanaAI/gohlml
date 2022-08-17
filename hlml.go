@@ -337,6 +337,13 @@ func (d Device) SerialNumber() (string, error) {
 	return C.GoString(&serial[0]), errorString(rc)
 }
 
+// ModuleID returns the device moduleID
+func (d Device) ModuleID() (uint, error) {
+	var moduleID C.uint
+	rc := C.hlml_device_get_module_id(d.dev, &moduleID)
+	return uint(moduleID), errorString(rc)
+}
+
 // BoardID returns an ID for the PCB board
 func (d Device) BoardID() (uint, error) {
 	var id C.uint
