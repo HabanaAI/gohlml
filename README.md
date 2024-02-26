@@ -1,12 +1,14 @@
-# Introduction
-This repository providers a translation layer from HLML to Golang.  This library is mean to be integrated into other modules which require HLML access.
+# go-hlml
+This repository provides a translation layer from HLML to Golang. The library is meant to be integrated into other modules requiring HLML access.
 
 ## Testing
-To get the metrics code, copy this code to a habana enabled system and run
-
-    go test
+To test the code, transfer the repository to a server where the Habana driver is installed and run the following: 
+```shell
+go test
+```
 
 ## Code Cover
-To valiadate metric code coverage run
-
-    go test -cover
+To validate metrics code coverage, run: 
+```shell
+go test -cover
+```
