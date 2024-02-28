@@ -1,4 +1,4 @@
-# go-hlml
+# gohlml
 This repository provides a translation layer from HLML to Golang. The library is meant to be integrated into other modules requiring HLML access.
 
 ## Testing
