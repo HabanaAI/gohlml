@@ -1,4 +1,4 @@
-module gerrit.habana-labs.com/go-hlml
+module github.com/HabanaAI/gohlml
 
 go 1.21
 
