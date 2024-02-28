@@ -9,7 +9,7 @@ import (
 )
 
 func TestInitialize(t *testing.T) {
-	cnt, err := DeviceCount()
+	_, err := DeviceCount()
 	assert.NotNil(t, err, "Error should be raised when HLML isn't enabled")
 
 	start := time.Now()
@@ -17,7 +17,7 @@ func TestInitialize(t *testing.T) {
 	printDuration("TestInitialize()", time.Since(start))
 	assert.Nil(t, err, err)
 
-	cnt, err = DeviceCount()
+	cnt, err := DeviceCount()
 
 	assert.Nil(t, err, "Error should not be raised when HLML is initialized")
 	assert.Greater(t, cnt, uint(0), "Should detect at least 1 device")
@@ -43,7 +43,6 @@ func TestRedundantInitialize(t *testing.T) {
 }
 
 func TestInitWithLogs(t *testing.T) {
-
 	start := time.Now()
 	err := InitWithLogs()
 	printDuration("TestInitWithLogs()", time.Since(start))
@@ -274,6 +273,7 @@ func TestTemperatureOnBoard(t *testing.T) {
 	err = Shutdown()
 	assert.Nil(t, err, err)
 }
+
 func TestTemperatureOnChip(t *testing.T) {
 	dev := prepareDevice(t)
 
@@ -384,6 +384,19 @@ func TestSerialNumber(t *testing.T) {
 	assert.Nil(t, err, "Should be able to get serial number")
 	assert.Greater(t, len(serial), 8)
 
+	err = Shutdown()
+	assert.Nil(t, err, err)
+}
+
+func TestDeviceModuleID(t *testing.T) {
+	dev := prepareDevice(t)
+
+	start := time.Now()
+	moduleID, err := dev.ModuleID()
+	printDuration("ModuleID()", time.Since(start))
+	assert.Nil(t, err, "Should be able to get moduleID")
+	// We assume we have max of 8 cards with moduleID: 0,1,2,3,4,5,6,7
+	assert.GreaterOrEqual(t, moduleID, uint(0), "ModuleID should be Greater or equal than 0")
 	err = Shutdown()
 	assert.Nil(t, err, err)
 }
@@ -620,4 +633,37 @@ func prepareDevice(t *testing.T) Device {
 	dev, err := DeviceHandleByIndex(0)
 	assert.Nil(t, err, "Should be able to get device handle")
 	return dev
+}
+
+func TestGetDeviceFamily(t *testing.T) {
+	tests := []struct {
+		name          string
+		deviceName    string
+		deviceID      string
+		errorExpected bool
+	}{
+		{name: "Get Guadi 1 device", errorExpected: false, deviceName: "gaudi", deviceID: "1000"},
+		{name: "Get Guadi 2 device", errorExpected: false, deviceName: "gaudi", deviceID: "1020"},
+		{name: "Get Greco device", errorExpected: false, deviceName: "greco", deviceID: "0020"},
+		{name: "Get Goya device", errorExpected: false, deviceName: "goya", deviceID: "0001"},
+		{name: "No device matched", errorExpected: true, deviceName: "", deviceID: "9999"},
+	}
+
+	for _, tc := range tests {
+		pciBasePath = tc.deviceID
+		t.Run(tc.name, func(t *testing.T) {
+			d, err := getDeviceName(tc.deviceID)
+			if !tc.errorExpected && err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+
+			if tc.errorExpected && err == nil {
+				t.Errorf("expected error, got none")
+			}
+
+			if d != tc.deviceName {
+				t.Errorf("expected device %q, got %q", tc.deviceName, d)
+			}
+		})
+	}
 }

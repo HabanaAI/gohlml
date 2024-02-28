@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, HabanaLabs Ltd.  All rights reserved.
+ * Copyright (c) 2022, HabanaLabs Ltd.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+// Package gohlml is a Go package serves as a bridge to work
+// with hlml C library. It allows access to native Habana device
+// commands and information.
 package gohlml
 
 /*
@@ -22,11 +25,14 @@ package gohlml
 #include <stdlib.h>
 */
 import "C"
+
 import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -37,12 +43,14 @@ const (
 	// HlmlCriticalError indicates a critical error in the device
 	HlmlCriticalError = C.HLML_EVENT_CRITICAL_ERR
 	// HLDriverPath indicates on habana device dir
-	HLDriverPath = "/sys/class/habanalabs"
+	HLDriverPath = "/sys/class/accel"
 	// HLModulePath indicates on habana module dir
 	HLModulePath = "/sys/module/habanalabs"
 	// BITSPerLong repsenets 64 bits in logs
 	BITSPerLong = 64
 )
+
+var pciBasePath = "/sys/bus/pci/devices"
 
 // Device struct maps to C HLML structure
 type Device struct{ dev C.hlml_device_t }
@@ -62,6 +70,20 @@ type PCIInfo struct {
 	DeviceID uint
 }
 
+var (
+	ErrNotIntialized      = errors.New("hlml not initialized")
+	ErrInvalidArgument    = errors.New("invalid argument")
+	ErrNotSupported       = errors.New("not supported")
+	ErrAlreadyInitialized = errors.New("hlml already initialized")
+	ErrNotFound           = errors.New("not found")
+	ErrInsufficientSize   = errors.New("insufficient size")
+	ErrDriverNotLoaded    = errors.New("driver not loaded")
+	ErrAipIsLost          = errors.New("aip is lost")
+	ErrMemoryError        = errors.New("memory error")
+	ErrNoData             = errors.New("no data")
+	ErrUnknownError       = errors.New("unknown error")
+)
+
 func errorString(ret C.hlml_return_t) error {
 	switch ret {
 	case C.HLML_SUCCESS:
@@ -69,27 +91,27 @@ func errorString(ret C.hlml_return_t) error {
 	case C.HLML_ERROR_TIMEOUT:
 		return nil
 	case C.HLML_ERROR_UNINITIALIZED:
-		return fmt.Errorf("HLML not initialized")
+		return ErrNotIntialized
 	case C.HLML_ERROR_INVALID_ARGUMENT:
-		return fmt.Errorf("invalid argument")
+		return ErrInvalidArgument
 	case C.HLML_ERROR_NOT_SUPPORTED:
-		return fmt.Errorf("not supported")
+		return ErrNotSupported
 	case C.HLML_ERROR_ALREADY_INITIALIZED:
-		return fmt.Errorf("HLML already initialized")
+		return ErrAlreadyInitialized
 	case C.HLML_ERROR_NOT_FOUND:
-		return fmt.Errorf("not found")
+		return ErrNotFound
 	case C.HLML_ERROR_INSUFFICIENT_SIZE:
-		return fmt.Errorf("insufficient size")
+		return ErrInsufficientSize
 	case C.HLML_ERROR_DRIVER_NOT_LOADED:
-		return fmt.Errorf("driver not loaded")
+		return ErrDriverNotLoaded
 	case C.HLML_ERROR_AIP_IS_LOST:
-		return fmt.Errorf("AIP is lost")
+		return ErrAipIsLost
 	case C.HLML_ERROR_MEMORY:
-		return fmt.Errorf("memory error")
+		return ErrMemoryError
 	case C.HLML_ERROR_NO_DATA:
-		return fmt.Errorf("no data")
+		return ErrNoData
 	case C.HLML_ERROR_UNKNOWN:
-		return fmt.Errorf("unknown error")
+		return ErrUnknownError
 	}
 
 	return fmt.Errorf("invalid HLML error return code %d", ret)
@@ -154,8 +176,7 @@ func DeviceHandleBySerial(serial string) (*Device, error) {
 	return nil, errors.New("could not find device with serial number")
 }
 
-// MinorNumber returns Minor number:
-// minor
+// MinorNumber returns Minor number.
 func (d Device) MinorNumber() (uint, error) {
 	var minor C.uint
 
@@ -164,7 +185,6 @@ func (d Device) MinorNumber() (uint, error) {
 }
 
 // Name returns Device Name
-// name
 func (d Device) Name() (string, error) {
 	var name [szUUID]C.char
 
@@ -213,21 +233,24 @@ func (d Device) PCIID() (uint, error) {
 }
 
 // PCILinkSpeed returns the current PCI link speed for a given device
-func (d Device) PCILinkSpeed() (string, error) {
+func (d Device) PCILinkSpeed() (uint, error) {
 	var pci C.hlml_pci_info_t
 
 	rc := C.hlml_device_get_pci_info(d.dev, &pci)
 	speed := C.GoString(&pci.caps.link_speed[0])
-	return strings.Replace(speed, "0x", "", -1), errorString(rc)
+	speed = strings.ReplaceAll(speed, "0x", "")
+	res, _ := strconv.Atoi(speed)
+	return uint(res), errorString(rc)
 }
 
 // PCILinkWidth returns the current PCI link width for a given device
-func (d Device) PCILinkWidth() (string, error) {
+func (d Device) PCILinkWidth() (uint, error) {
 	var pci C.hlml_pci_info_t
 
 	rc := C.hlml_device_get_pci_info(d.dev, &pci)
-
-	return C.GoString(&pci.caps.link_width[0]), errorString(rc)
+	width := C.GoString(&pci.caps.link_width[0])
+	res, _ := strconv.Atoi(width)
+	return uint(res), errorString(rc)
 }
 
 // MemoryInfo returns the current memory usage in bytes for total, used, free
@@ -330,7 +353,7 @@ func (d Device) TemperatureThresholdGPU() (uint, error) {
 	return uint(temp), errorString(rc)
 }
 
-// PowerManagementDefaultLimitRetrieves default power management limit on this device, in milliwatts.
+// PowerManagementDefaultLimit Retrieves default power management limit on this device, in milliwatts.
 // Default power management limit is a power management limit that the device boots with.
 func (d Device) PowerManagementDefaultLimit() (uint, error) {
 	var limit C.uint
@@ -339,8 +362,9 @@ func (d Device) PowerManagementDefaultLimit() (uint, error) {
 }
 
 // ECCMode retrieves the current and pending ECC modes for the device
-// 1 - ECCMode enabled
-// 0 - ECCMode disabled
+//
+//	1 - ECCMode enabled
+//	0 - ECCMode disabled
 func (d Device) ECCMode() (uint, uint, error) {
 	var current, pending C.hlml_enable_state_t
 	rc := C.hlml_device_get_ecc_mode(d.dev, &current, &pending)
@@ -376,6 +400,13 @@ func (d Device) SerialNumber() (string, error) {
 
 	rc := C.hlml_device_get_serial(d.dev, &serial[0], szUUID)
 	return C.GoString(&serial[0]), errorString(rc)
+}
+
+// ModuleID returns the device moduleID
+func (d Device) ModuleID() (uint, error) {
+	var moduleID C.uint
+	rc := C.hlml_device_get_module_id(d.dev, &moduleID)
+	return uint(moduleID), errorString(rc)
 }
 
 // BoardID returns an ID for the PCB board
@@ -497,13 +528,14 @@ func (d Device) IsReplacedRowsPendingStatus() (int, error) {
 	return int(isPending), errorString(rc)
 }
 
+// NumaNode returns the Numa affinity of the device or nil is no affinity.
 func (d Device) NumaNode() (*uint, error) {
-	busId, err := d.PCIBusID()
+	busID, err := d.PCIBusID()
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := ioutil.ReadFile(fmt.Sprintf("/sys/bus/pci/devices/%s/numa_node", strings.ToLower(busId)))
+	b, err := os.ReadFile(fmt.Sprintf("/sys/bus/pci/devices/%s/numa_node", strings.ToLower(busID)))
 	if err != nil {
 		// report nil if NUMA support isn't enabled
 		return nil, nil
@@ -518,27 +550,28 @@ func (d Device) NumaNode() (*uint, error) {
 
 	numaNode := uint(node)
 	return &numaNode, nil
-
 }
 
 // FWVersion returns the firmware version for a given device
-func FWVersion(idx uint) (string, string, error) {
-	kernel, err := ioutil.ReadFile(HLDriverPath + "/hl" + fmt.Sprint(idx) + "/armcp_kernel_ver")
+func FWVersion(idx uint) (kernel string, uboot string, err error) {
+	b, err := os.ReadFile(fmt.Sprintf("%s/accel%d/device/armcp_kernel_ver", HLDriverPath, idx))
 	if err != nil {
 		return "", "", fmt.Errorf("file reading error %s", err)
 	}
+	kernel = string(b)
 
-	uboot, err := ioutil.ReadFile(HLDriverPath + "/hl" + fmt.Sprint(idx) + "/uboot_ver")
+	b, err = os.ReadFile(fmt.Sprintf("%s/accel%d/device/uboot_ver", HLDriverPath, idx))
 	if err != nil {
 		return "", "", fmt.Errorf("file reading error %s", err)
 	}
-	return string(kernel), string(uboot), nil
+	uboot = string(b)
+
+	return kernel, uboot, nil
 }
 
 // SystemDriverVersion returns the driver version on the system
 func SystemDriverVersion() (string, error) {
-	driver, err := ioutil.ReadFile(HLModulePath + "/version")
-
+	driver, err := os.ReadFile(HLModulePath + "/version")
 	if err != nil {
 		return "", fmt.Errorf("file reading error %s", err)
 	}
@@ -553,9 +586,7 @@ func NewEventSet() EventSet {
 }
 
 func RegisterEventForDevice(es EventSet, event int, uuid string) error {
-
 	deviceHandle, err := DeviceHandleBySerial(uuid)
-
 	if err != nil {
 		return fmt.Errorf("hlml: device not found")
 	}
@@ -583,4 +614,82 @@ func WaitForEvent(es EventSet, timeout uint) (Event, error) {
 			Etype:  uint64(data.event_type),
 		},
 		errorString(r)
+}
+
+func GetDeviceTypeName() (string, error) {
+	var deviceType string
+
+	err := filepath.Walk(pciBasePath, func(path string, info os.FileInfo, err error) error {
+		log.Println(pciBasePath, info.Name())
+		if err != nil {
+			return fmt.Errorf("error accessing file path %q", path)
+		}
+		if info.IsDir() {
+			log.Println("Not a device, continuing")
+			return nil
+		}
+		// Retrieve vendor for the device
+		vendorID, err := readIDFromFile(pciBasePath, info.Name(), "vendor")
+		if err != nil {
+			return fmt.Errorf("get vendor: %w", err)
+		}
+
+		// Habana vendor id is "1da3".
+		if vendorID != "1da3" {
+			return nil
+		}
+
+		deviceID, err := readIDFromFile(pciBasePath, info.Name(), "device")
+		if err != nil {
+			return fmt.Errorf("get device info: %w", err)
+		}
+
+		deviceType, err = getDeviceName(deviceID)
+		if err != nil {
+			return fmt.Errorf("get device name: %w", err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return deviceType, nil
+}
+
+func getDeviceName(deviceID string) (string, error) {
+	goya := []string{"0001"}
+	// Gaudi family includes Gaudi 1 and Guadi 2
+	gaudi := []string{"1000", "1001", "1010", "1011", "1020", "1030", "1060", "1061", "1062"}
+	greco := []string{"0020", "0030"}
+
+	switch {
+	case checkFamily(goya, deviceID):
+		return "goya", nil
+	case checkFamily(gaudi, deviceID):
+		return "gaudi", nil
+	case checkFamily(greco, deviceID):
+		return "greco", nil
+	default:
+		return "", errors.New("no habana devices on the system")
+	}
+}
+
+func checkFamily(family []string, id string) bool {
+	for _, m := range family {
+		if strings.HasSuffix(id, m) {
+			return true
+		}
+	}
+	return false
+}
+
+func readIDFromFile(basePath string, deviceAddress string, property string) (string, error) {
+	data, err := os.ReadFile(filepath.Join(basePath, deviceAddress, property))
+	if err != nil {
+		return "", fmt.Errorf("could not read %s for device %s: %w", property, deviceAddress, err)
+	}
+	id := strings.Trim(string(data[2:]), "\n")
+	return id, nil
 }
