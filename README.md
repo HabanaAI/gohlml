@@ -29,29 +29,34 @@ import (
 func main() {
 	ret := hlml.Initialize()
 	if ret != nil {
-		log.Fatalf("failed to initialize HLML: %v", err)
+		log.Fatalf("failed to initialize HLML: %v", ret)
+        return
 	}
+
 	defer func() {
 		ret := hlml.Shutdown()
 		if ret != nil {
-			log.Fatalf("failed to shutdown HLML: %v", err)
+			log.Fatalf("failed to shutdown HLML: %v", ret)
 		}
 	}()
 
 	count, ret := hlml.DeviceCount()
 	if ret != nil {
-		log.Fatalf("failed to get device count: %v",err)
+		log.Fatalf("failed to get device count: %v",ret)
+        return
 	}
 
-	for i := 0; i < count; i++ {
+	for uint(i) := 0; i < count; i++ {
 		device, ret := hlml.DeviceHandleByIndex(i)
 		if ret != nil {
-			log.Fatalf("failed to get device at index %d: %v", i, err)
+			log.Fatalf("failed to get device at index %d: %v", i, ret)
+            continue
 		}
 
 		uuid, ret := device.ModuleID()
 		if ret != nil {
-			log.Fatalf("failed to get uuid of device at index %d: %v", i, err)
+			log.Fatalf("failed to get uuid of device at index %d: %v", i, ret)
+            continue
 		}
 
 		fmt.Printf("%v\n", uuid)
