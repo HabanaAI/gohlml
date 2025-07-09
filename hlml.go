@@ -661,7 +661,7 @@ func GetDeviceTypeName() (string, error) {
 func getDeviceName(deviceID string) (string, error) {
 	goya := []string{"0001"}
 	// Gaudi family includes Gaudi 1 and Guadi 2
-	gaudi := []string{"1000", "1001", "1010", "1011", "1020", "1030", "1060", "1061", "1062"}
+	gaudi := []string{"1000", "1001", "1010", "1011", "1020", "1021", "1030", "1060", "1061", "1062"}
 	greco := []string{"0020", "0030"}
 
 	switch {
